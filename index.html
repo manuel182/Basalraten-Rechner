@@ -49,8 +49,19 @@
         @media (max-width: 768px) { 
             .grid { grid-template-columns: 1fr; gap: 30px; }
             table { font-size: 12px; }
-            .header-right { flex-direction: column; gap: 5px; }
-            .btn { padding: 6px 12px; font-size: 12px; }
+            .header-right { flex-wrap: wrap; gap: 6px; }
+            .btn { padding: 6px 10px; font-size: 11px; min-width: auto; }
+            .btn-history { background: #059669; }
+            .btn-theme { background: #f59e0b; }
+            h1 { font-size: 22px; }
+            .header { flex-wrap: wrap; gap: 10px; }
+        }
+        
+        @media (max-width: 480px) {
+            .btn { padding: 8px; font-size: 16px; min-width: 44px; height: 44px; justify-content: center; }
+            .btn span:last-child { display: none; }
+            .header-right { gap: 8px; }
+            .container { padding: 20px; }
         }
         .form-section h2 { color: var(--text-color); font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         .current-settings { background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0ea5e9; }
@@ -118,9 +129,9 @@
                 <h1>Basalraten-Rechner</h1>
             </div>
             <div class="header-right">
-                <button class="btn btn-history" onclick="openHistory()">📋 Historie</button>
-                <button class="btn btn-theme" onclick="toggleTheme()">🌙 Dunkel</button>
-                <button class="btn" onclick="openSettings()">⚙️ Einstellungen</button>
+                <button class="btn btn-history" onclick="openHistory()"><span>📋</span><span> Historie</span></button>
+                <button class="btn btn-theme" onclick="toggleTheme()"><span>🌙</span><span> Dunkel</span></button>
+                <button class="btn" onclick="openSettings()"><span>⚙️</span><span> Einstellungen</span></button>
             </div>
         </div>
 
@@ -312,7 +323,17 @@
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
             const btn = document.querySelector('.btn-theme');
-            if (btn) btn.innerHTML = savedTheme === 'dark' ? '☀️ Hell' : '🌙 Dunkel';
+            if (btn) {
+                const iconSpan = btn.querySelector('span:first-child');
+                const textSpan = btn.querySelector('span:last-child');
+                if (savedTheme === 'dark') {
+                    iconSpan.textContent = '☀️';
+                    textSpan.textContent = ' Hell';
+                } else {
+                    iconSpan.textContent = '🌙';
+                    textSpan.textContent = ' Dunkel';
+                }
+            }
         }
 
         function toggleTheme() {
@@ -321,7 +342,15 @@
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             const btn = document.querySelector('.btn-theme');
-            btn.innerHTML = newTheme === 'dark' ? '☀️ Hell' : '🌙 Dunkel';
+            const iconSpan = btn.querySelector('span:first-child');
+            const textSpan = btn.querySelector('span:last-child');
+            if (newTheme === 'dark') {
+                iconSpan.textContent = '☀️';
+                textSpan.textContent = ' Hell';
+            } else {
+                iconSpan.textContent = '🌙';
+                textSpan.textContent = ' Dunkel';
+            }
         }
 
         function getSettings() {
