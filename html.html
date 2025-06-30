@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-touch-icon" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23dc2626'/><stop offset='100%25' style='stop-color:%23991b1b'/></linearGradient><linearGradient id='drop' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23ef4444'/><stop offset='100%25' style='stop-color:%23dc2626'/></linearGradient></defs><rect width='180' height='180' rx='40' fill='url(%23bg)'/><path d='M60 50 C60 35, 80 25, 90 40 C100 25, 120 35, 120 50 C120 70, 90 90, 90 90 C90 90, 60 70, 60 50 Z' fill='url(%23drop)'/><circle cx='90' cy='55' r='3' fill='%23ffffff' opacity='0.3'/><path d='M50 110 L70 100 L85 115 L100 95 L115 105 L130 85' stroke='%23ffffff' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/><circle cx='50' cy='110' r='3' fill='%23ffffff'/><circle cx='70' cy='100' r='3' fill='%23ffffff'/><circle cx='85' cy='115' r='3' fill='%23ffffff'/><circle cx='100' cy='95' r='3' fill='%23ffffff'/><circle cx='115' cy='105' r='3' fill='%23ffffff'/><circle cx='130' cy='85' r='3' fill='%23ffffff'/><rect x='40' y='125' width='100' height='2' fill='%23ffffff' opacity='0.3'/><rect x='40' y='135' width='100' height='2' fill='%23ffffff' opacity='0.2'/><rect x='40' y='145' width='100' height='2' fill='%23ffffff' opacity='0.1'/></svg>">
+    <meta name="apple-mobile-web-app-title" content="Basalraten">
+    <title>Basalraten-Rechner</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --container-bg: white;
+            --text-color: #1f2937;
+            --border-color: #e5e5e5;
+            --modal-bg: rgba(0, 0, 0, 0.5);
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #111827;
+            --container-bg: #1f2937;
+            --text-color: #f9fafb;
+            --border-color: #374151;
+            --modal-bg: rgba(0, 0, 0, 0.8);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); padding: 20px; transition: all 0.3s ease; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--container-bg); border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 20px; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .header-icon { width: 32px; height: 32px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; }
+        h1 { color: var(--text-color); font-size: 28px; font-weight: 700; }
+        .btn { background: #6b7280; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn:hover { background: #4b5563; }
+        .btn-theme { background: #f59e0b; }
+        .btn-theme:hover { background: #d97706; }
+        .btn-history { background: #059669; }
+        .btn-history:hover { background: #047857; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: var(--modal-bg); }
+        .modal-content { background: var(--container-bg); margin: 10% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto; }
+        .modal-content-large { max-width: 800px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        .close { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; border: none; background: none; }
+        .close:hover { color: var(--text-color); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        @media (max-width: 768px) { 
+            .grid { grid-template-columns: 1fr; gap: 30px; }
+            table { font-size: 12px; }
+            .header-right { flex-direction: column; gap: 5px; }
+            .btn { padding: 6px 12px; font-size: 12px; }
+        }
+        .form-section h2 { color: var(--text-color); font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+        .current-settings { background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0ea5e9; }
+        [data-theme="dark"] .current-settings { background: #1e3a8a; }
+        .current-settings h3 { color: #0c4a6e; font-size: 16px; margin-bottom: 10px; }
+        [data-theme="dark"] .current-settings h3 { color: #93c5fd; }
+        .current-settings p { margin-bottom: 4px; font-size: 14px; color: #075985; }
+        [data-theme="dark"] .current-settings p { color: #bfdbfe; }
+        .settings-incomplete { background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ef4444; }
+        [data-theme="dark"] .settings-incomplete { background: #7f1d1d; }
+        .settings-incomplete h3 { color: #b91c1c; font-size: 16px; margin-bottom: 10px; }
+        [data-theme="dark"] .settings-incomplete h3 { color: #fca5a5; }
+        .settings-incomplete p { margin-bottom: 4px; font-size: 14px; color: #dc2626; }
+        [data-theme="dark"] .settings-incomplete p { color: #fecaca; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 500; color: var(--text-color); margin-bottom: 8px; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 16px; background: var(--container-bg); color: var(--text-color); }
+        input:focus, select:focus { outline: none; border-color: #2563eb; }
+        .button-group { display: flex; gap: 12px; margin-top: 25px; flex-wrap: wrap; }
+        button { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-pdf { background: #dc2626; color: white; }
+        .btn-pdf:hover:not(:disabled) { background: #b91c1c; }
+        .btn-save { background: #059669; color: white; }
+        .btn-save:hover { background: #047857; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        .results-section h2 { color: var(--text-color); font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+        .patient-info { background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2563eb; }
+        [data-theme="dark"] .patient-info { background: #374151; }
+        .patient-info p { margin-bottom: 4px; font-size: 14px; color: #4b5563; }
+        [data-theme="dark"] .patient-info p { color: #d1d5db; }
+        .patient-info strong { color: var(--text-color); }
+        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: #f3f4f6; font-weight: 600; color: var(--text-color); }
+        [data-theme="dark"] th { background: #4b5563; }
+        .time-cell { font-family: monospace; font-weight: 500; white-space: nowrap; min-width: 50px; }
+        .rate-cell { font-family: monospace; font-weight: bold; color: #2563eb; text-align: right; }
+        .percentage-cell { color: #6b7280; text-align: right; }
+        [data-theme="dark"] .percentage-cell { color: #9ca3af; }
+        tr:nth-child(even) { background: #fafafa; }
+        [data-theme="dark"] tr:nth-child(even) { background: #374151; }
+        .empty-state { background: #f9fafb; padding: 60px 40px; text-align: center; border-radius: 8px; border: 2px dashed var(--border-color); }
+        [data-theme="dark"] .empty-state { background: #374151; }
+        .empty-icon { width: 48px; height: 48px; background: #e5e7eb; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #9ca3af; }
+        [data-theme="dark"] .empty-icon { background: #4b5563; }
+        .empty-state p { color: #6b7280; margin-bottom: 8px; }
+        [data-theme="dark"] .empty-state p { color: #9ca3af; }
+        .settings-note { background: #fef3c7; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px; font-size: 14px; color: #92400e; }
+        [data-theme="dark"] .settings-note { background: #451a03; color: #fbbf24; }
+        .history-item { padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px; cursor: pointer; transition: all 0.2s; }
+        .history-item:hover { background: #f3f4f6; }
+        [data-theme="dark"] .history-item:hover { background: #4b5563; }
+        .history-date { font-size: 12px; color: #6b7280; margin-bottom: 5px; }
+        [data-theme="dark"] .history-date { color: #9ca3af; }
+        .history-summary { font-weight: 500; color: var(--text-color); }
+        .trend-chart { width: 100%; height: 200px; margin: 20px 0; border: 1px solid var(--border-color); border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="header-icon">📊</div>
+                <h1>Basalraten-Rechner</h1>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-history" onclick="openHistory()">📋 Historie</button>
+                <button class="btn btn-theme" onclick="toggleTheme()">🌙 Dunkel</button>
+                <button class="btn" onclick="openSettings()">⚙️ Einstellungen</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="form-section">
+                <h2>Berechnung</h2>
+                
+                <div id="currentSettings" class="current-settings">
+                    <h3>🔧 Aktuelle Einstellungen</h3>
+                    <p id="settingsDisplay">Bitte Einstellungen konfigurieren</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="totalInsulin">Tages Gesamtinsulin (I.E.)</label>
+                    <input type="number" id="totalInsulin" placeholder="z.B. 13" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label for="basalPercentage">Anteil Basal (%)</label>
+                    <select id="basalPercentage">
+                        <option value="">Bitte wählen...</option>
+                        <option value="18">18%</option>
+                        <option value="20">20%</option>
+                        <option value="22">22%</option>
+                        <option value="24">24%</option>
+                        <option value="26">26%</option>
+                        <option value="28">28%</option>
+                        <option value="30">30%</option>
+                        <option value="32">32%</option>
+                        <option value="34">34%</option>
+                        <option value="36">36%</option>
+                        <option value="38">38%</option>
+                        <option value="40">40%</option>
+                        <option value="42">42%</option>
+                        <option value="44">44%</option>
+                        <option value="46">46%</option>
+                        <option value="48">48%</option>
+                        <option value="50">50%</option>
+                        <option value="52">52%</option>
+                        <option value="54">54%</option>
+                        <option value="56">56%</option>
+                        <option value="58">58%</option>
+                        <option value="60">60%</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="temporaryBasal">Temporäre Basal (%)</label>
+                    <select id="temporaryBasal">
+                        <option value="50">50%</option>
+                        <option value="60">60%</option>
+                        <option value="70">70%</option>
+                        <option value="80">80%</option>
+                        <option value="90">90%</option>
+                        <option value="100" selected>100%</option>
+                        <option value="110">110%</option>
+                        <option value="120">120%</option>
+                        <option value="130">130%</option>
+                        <option value="140">140%</option>
+                        <option value="150">150%</option>
+                        <option value="160">160%</option>
+                        <option value="170">170%</option>
+                        <option value="180">180%</option>
+                        <option value="190">190%</option>
+                        <option value="200">200%</option>
+                        <option value="210">210%</option>
+                        <option value="220">220%</option>
+                        <option value="230">230%</option>
+                        <option value="240">240%</option>
+                        <option value="250">250%</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-pdf" onclick="generatePDF()" id="pdfBtn" disabled>
+                        📄 PDF erstellen
+                    </button>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <h2>Berechnete Basalraten</h2>
+                <div id="trendChart" class="trend-chart" style="display:none;"></div>
+                <div id="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Grundeinstellungen</h2>
+                <button class="close" onclick="closeSettings()">&times;</button>
+            </div>
+            
+            <div class="settings-note">
+                Diese Grundeinstellungen werden für alle Berechnungen verwendet.
+            </div>
+
+            <div class="form-group">
+                <label for="defaultName">Name</label>
+                <input type="text" id="defaultName" placeholder="">
+            </div>
+
+            <div class="form-group">
+                <label for="defaultAgeGroup">Altersgruppe</label>
+                <select id="defaultAgeGroup">
+                    <option value="">Bitte wählen...</option>
+                    <option value="1-5">1-5 Jahre</option>
+                    <option value="6-11">6-11 Jahre</option>
+                    <option value="12+">12+ Jahre</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="defaultPumpStep">Pumpe Schrittweite</label>
+                <select id="defaultPumpStep">
+                    <option value="">Bitte wählen...</option>
+                    <option value="0.01">0,01</option>
+                    <option value="0.015">0,015</option>
+                    <option value="0.025">0,025</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-save" onclick="saveSettings()">💾 Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h2>📋 Historie der Berechnungen</h2>
+                <button class="close" onclick="closeHistory()">&times;</button>
+            </div>
+            
+            <div id="historyList">
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>Noch keine Berechnungen gespeichert.</p>
+                    <p>Führen Sie eine Berechnung durch, um sie hier zu sehen.</p>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn" onclick="clearHistory()" style="background: #dc2626;">🗑️ Historie löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        const basalRates = {
+            '1-5': [
+                { time: '00-01', rate: 0.0397 }, { time: '01-02', rate: 0.0361 }, { time: '02-03', rate: 0.0346 },
+                { time: '03-04', rate: 0.0370 }, { time: '04-05', rate: 0.0376 }, { time: '05-06', rate: 0.0387 },
+                { time: '06-07', rate: 0.0418 }, { time: '07-08', rate: 0.0401 }, { time: '08-09', rate: 0.0376 },
+                { time: '09-10', rate: 0.0354 }, { time: '10-11', rate: 0.0315 }, { time: '11-12', rate: 0.0280 },
+                { time: '12-13', rate: 0.0286 }, { time: '13-14', rate: 0.0321 }, { time: '14-15', rate: 0.0361 },
+                { time: '15-16', rate: 0.0397 }, { time: '16-17', rate: 0.0443 }, { time: '17-18', rate: 0.0496 },
+                { time: '18-19', rate: 0.0510 }, { time: '19-20', rate: 0.0550 }, { time: '20-21', rate: 0.0581 },
+                { time: '21-22', rate: 0.0614 }, { time: '22-23', rate: 0.0552 }, { time: '23-24', rate: 0.0508 }
+            ],
+            '6-11': [
+                { time: '00-01', rate: 0.0420 }, { time: '01-02', rate: 0.0427 }, { time: '02-03', rate: 0.0441 },
+                { time: '03-04', rate: 0.0462 }, { time: '04-05', rate: 0.0492 }, { time: '05-06', rate: 0.0509 },
+                { time: '06-07', rate: 0.0501 }, { time: '07-08', rate: 0.0447 }, { time: '08-09', rate: 0.0389 },
+                { time: '09-10', rate: 0.0333 }, { time: '10-11', rate: 0.0310 }, { time: '11-12', rate: 0.0291 },
+                { time: '12-13', rate: 0.0297 }, { time: '13-14', rate: 0.0308 }, { time: '14-15', rate: 0.0336 },
+                { time: '15-16', rate: 0.0393 }, { time: '16-17', rate: 0.0452 }, { time: '17-18', rate: 0.0476 },
+                { time: '18-19', rate: 0.0469 }, { time: '19-20', rate: 0.0463 }, { time: '20-21', rate: 0.0463 },
+                { time: '21-22', rate: 0.0447 }, { time: '22-23', rate: 0.0445 }, { time: '23-24', rate: 0.0429 }
+            ],
+            '12+': [
+                { time: '00-01', rate: 0.0347 }, { time: '01-02', rate: 0.0380 }, { time: '02-03', rate: 0.0431 },
+                { time: '03-04', rate: 0.0495 }, { time: '04-05', rate: 0.0559 }, { time: '05-06', rate: 0.0611 },
+                { time: '06-07', rate: 0.0589 }, { time: '07-08', rate: 0.0511 }, { time: '08-09', rate: 0.0431 },
+                { time: '09-10', rate: 0.0378 }, { time: '10-11', rate: 0.0355 }, { time: '11-12', rate: 0.0339 },
+                { time: '12-13', rate: 0.0335 }, { time: '13-14', rate: 0.0339 }, { time: '14-15', rate: 0.0364 },
+                { time: '15-16', rate: 0.0397 }, { time: '16-17', rate: 0.0453 }, { time: '17-18', rate: 0.0459 },
+                { time: '18-19', rate: 0.0450 }, { time: '19-20', rate: 0.0400 }, { time: '20-21', rate: 0.0369 },
+                { time: '21-22', rate: 0.0339 }, { time: '22-23', rate: 0.0335 }, { time: '23-24', rate: 0.0334 }
+            ]
+        };
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            const btn = document.querySelector('.btn-theme');
+            if (btn) btn.innerHTML = savedTheme === 'dark' ? '☀️ Hell' : '🌙 Dunkel';
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            const btn = document.querySelector('.btn-theme');
+            btn.innerHTML = newTheme === 'dark' ? '☀️ Hell' : '🌙 Dunkel';
+        }
+
+        function getSettings() {
+            try { return JSON.parse(localStorage.getItem('basalSettings') || '{}'); }
+            catch { return {}; }
+        }
+
+        function openSettings() {
+            const s = getSettings();
+            document.getElementById('defaultName').value = s.name || '';
+            document.getElementById('defaultAgeGroup').value = s.age || '';
+            document.getElementById('defaultPumpStep').value = s.step || '';
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            const settings = {
+                name: document.getElementById('defaultName').value,
+                age: document.getElementById('defaultAgeGroup').value,
+                step: document.getElementById('defaultPumpStep').value
+            };
+            if (!settings.age || !settings.step) {
+                alert('Bitte Altersgruppe und Pumpe Schrittweite auswählen!');
+                return;
+            }
+            localStorage.setItem('basalSettings', JSON.stringify(settings));
+            alert('Einstellungen gespeichert!');
+            closeSettings();
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const s = getSettings();
+            const display = document.getElementById('settingsDisplay');
+            const container = document.getElementById('currentSettings');
+            
+            if (!s.age || !s.step) {
+                display.innerHTML = '⚠️ Bitte Grundeinstellungen konfigurieren';
+                container.className = 'settings-incomplete';
+                return;
+            }
+            
+            let html = '';
+            if (s.name) html += `<strong>Name:</strong> ${s.name}<br>`;
+            html += `<strong>Altersgruppe:</strong> ${s.age} Jahre<br>`;
+            html += `<strong>Pumpe Schrittweite:</strong> ${s.step}`;
+            
+            display.innerHTML = html;
+            container.className = 'current-settings';
+        }
+
+        function openHistory() {
+            const history = getHistory();
+            const historyList = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                historyList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <p>Noch keine Berechnungen gespeichert.</p>
+                    </div>`;
+            } else {
+                let html = '';
+                history.forEach(item => {
+                    const date = new Date(item.date);
+                    const dateStr = date.toLocaleDateString('de-DE') + ' ' + date.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+                    html += `
+                        <div class="history-item" onclick="loadFromHistory('${item.id}')">
+                            <div class="history-date">${dateStr}</div>
+                            <div class="history-summary">
+                                <strong>${item.data.name}</strong> - ${item.data.totalInsulin} I.E., ${item.data.basalPercentage}%
+                            </div>
+                        </div>`;
+                });
+                historyList.innerHTML = html;
+            }
+            document.getElementById('historyModal').style.display = 'block';
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        function getHistory() {
+            try { return JSON.parse(localStorage.getItem('basalHistory') || '[]'); }
+            catch { return []; }
+        }
+
+        function saveToHistory(data, rates) {
+            try {
+                const history = JSON.parse(localStorage.getItem('basalHistory') || '[]');
+                const historyItem = {
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    data: data,
+                    rates: rates,
+                    total: rates.reduce((sum, item) => sum + parseFloat(item.rate), 0)
+                };
+                history.unshift(historyItem);
+                if (history.length > 20) history.pop();
+                localStorage.setItem('basalHistory', JSON.stringify(history));
+            } catch (e) {}
+        }
+
+        function loadFromHistory(id) {
+            const history = getHistory();
+            const item = history.find(h => h.id == id);
+            if (item) {
+                document.getElementById('totalInsulin').value = item.data.totalInsulin;
+                document.getElementById('basalPercentage').value = item.data.basalPercentage;
+                document.getElementById('temporaryBasal').value = item.data.temporaryBasal;
+                closeHistory();
+                updateResults();
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('Alle gespeicherten Berechnungen löschen?')) {
+                localStorage.removeItem('basalHistory');
+                closeHistory();
+            }
+        }
+
+        function createTrendChart(rates) {
+            const chart = document.getElementById('trendChart');
+            chart.style.display = 'block';
+            
+            const width = Math.max(chart.offsetWidth - 80, 300);
+            const height = 140;
+            const maxRate = Math.max(...rates.map(r => parseFloat(r.rate)));
+            const minRate = Math.min(...rates.map(r => parseFloat(r.rate)));
+            const range = maxRate - minRate || 1;
+            
+            let pathData = '';
+            rates.forEach((rate, index) => {
+                const x = 40 + (index / (rates.length - 1)) * width;
+                const y = 20 + height - ((parseFloat(rate.rate) - minRate) / range) * height;
+                pathData += index === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+            });
+            
+            chart.innerHTML = `
+                <svg width="${width + 80}" height="${height + 60}" style="background: var(--container-bg); border-radius: 8px;">
+                    <g stroke="#e5e7eb" stroke-width="1" opacity="0.5">
+                        <line x1="40" y1="20" x2="40" y2="${height + 20}"/>
+                        <line x1="40" y1="${height + 20}" x2="${width + 40}" y2="${height + 20}"/>
+                    </g>
+                    <path d="${pathData}" stroke="#2563eb" stroke-width="2" fill="none"/>
+                    <text x="35" y="25" text-anchor="end" font-size="10" fill="#6b7280">${maxRate.toFixed(2)}</text>
+                    <text x="35" y="${height + 25}" text-anchor="end" font-size="10" fill="#6b7280">${minRate.toFixed(2)}</text>
+                    <text x="40" y="${height + 40}" text-anchor="start" font-size="10" fill="#6b7280">00:00</text>
+                    <text x="${40 + width}" y="${height + 40}" text-anchor="end" font-size="10" fill="#6b7280">24:00</text>
+                </svg>`;
+        }
+
+        function getFormData() {
+            const s = getSettings();
+            return {
+                name: s.name || 'Patient',
+                totalInsulin: parseFloat(document.getElementById('totalInsulin').value),
+                basalPercentage: parseFloat(document.getElementById('basalPercentage').value),
+                pumpStep: parseFloat(s.step),
+                ageGroup: s.age,
+                temporaryBasal: parseFloat(document.getElementById('temporaryBasal').value) || 100
+            };
+        }
+
+        function isValid() {
+            const s = getSettings();
+            const data = getFormData();
+            return s.age && s.step && !isNaN(data.totalInsulin) && data.totalInsulin > 0 && !isNaN(data.basalPercentage);
+        }
+
+        function calculate() {
+            const data = getFormData();
+            if (!isValid()) return [];
+            const totalBasal = (data.totalInsulin * data.basalPercentage) / 100;
+            const rates = basalRates[data.ageGroup];
+            return rates.map(({time, rate}) => {
+                let calc = totalBasal * rate * (data.temporaryBasal / 100);
+                let rounded = Math.round(calc / data.pumpStep) * data.pumpStep;
+                return {
+                    time,
+                    original: (totalBasal * rate).toFixed(3),
+                    rate: rounded.toFixed(3),
+                    percent: (rate * 100).toFixed(1)
+                };
+            });
+        }
+
+        function updateResults() {
+            const resultsDiv = document.getElementById('results');
+            const pdfBtn = document.getElementById('pdfBtn');
+            
+            if (!getSettings().age || !getSettings().step) {
+                resultsDiv.innerHTML = `<div class="empty-state"><div class="empty-icon">⚙️</div><p>Bitte Einstellungen konfigurieren.</p></div>`;
+                pdfBtn.disabled = true;
+                document.getElementById('trendChart').style.display = 'none';
+                return;
+            }
+            
+            if (isValid()) {
+                const data = getFormData();
+                const rates = calculate();
+                const total = rates.reduce((sum, item) => sum + parseFloat(item.rate), 0);
+                
+                saveToHistory(data, rates);
+                createTrendChart(rates);
+                
+                let html = `<div class="patient-info">
+                    <p><strong>Patient:</strong> ${data.name}</p>
+                    <p><strong>Gesamtinsulin:</strong> ${data.totalInsulin} I.E.</p>
+                    <p><strong>Basal-Anteil:</strong> ${data.basalPercentage}% (${(data.totalInsulin * data.basalPercentage / 100).toFixed(2)} I.E.)</p>
+                    <p><strong>Altersgruppe:</strong> ${data.ageGroup} Jahre</p>
+                    <p><strong>Pumpenschrittweite:</strong> ${data.pumpStep}</p>
+                    <p><strong>Temporäre Basal:</strong> ${data.temporaryBasal}%</p>
+                    <p><strong>Gesamt berechnet:</strong> ${total.toFixed(3)} I.E.</p>
+                </div><div class="table-container"><table><thead><tr>
+                    <th>Zeit</th><th style="text-align: right;">Soll (I.E.)</th><th style="text-align: right;">Gerundet (I.E.)</th><th style="text-align: right;">Anteil (%)</th>
+                </tr></thead><tbody>`;
+                
+                rates.forEach(({time, original, rate, percent}) => {
+                    html += `<tr><td class="time-cell">${time}</td><td class="rate-cell" style="color: #dc2626;">${original}</td><td class="rate-cell">${rate}</td><td class="percentage-cell">${percent}%</td></tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+                resultsDiv.innerHTML = html;
+                pdfBtn.disabled = false;
+            } else {
+                resultsDiv.innerHTML = `<div class="empty-state"><div class="empty-icon">⚙️</div><p>Bitte alle Felder ausfüllen.</p></div>`;
+                pdfBtn.disabled = true;
+                document.getElementById('trendChart').style.display = 'none';
+            }
+        }
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const data = getFormData();
+            const rates = calculate();
+            const total = rates.reduce((sum, item) => sum + parseFloat(item.rate), 0);
+            
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text('Basalraten-Berechnung', 20, 20);
+            doc.setFontSize(12);
+            doc.text(`Patient: ${data.name}`, 20, 40);
+            doc.text(`Gesamtinsulin: ${data.totalInsulin} I.E.`, 20, 50);
+            doc.text(`Basal-Anteil: ${data.basalPercentage}% (${(data.totalInsulin * data.basalPercentage / 100).toFixed(2)} I.E.)`, 20, 60);
+            doc.text(`Altersgruppe: ${data.ageGroup} Jahre`, 20, 70);
+            doc.text(`Temporäre Basal: ${data.temporaryBasal}%`, 20, 80);
+            doc.text(`Gesamt berechnet: ${total.toFixed(3)} I.E.`, 20, 90);
+            
+            const tableData = rates.map(({time, original, rate, percent}) => [time, original, rate, `${percent}%`]);
+            doc.autoTable({
+                head: [['Zeit', 'Soll (I.E.)', 'Gerundet (I.E.)', 'Anteil (%)']],
+                body: tableData,
+                startY: 100,
+                styles: { fontSize: 10 }
+            });
+            
+            doc.save(`Basalraten_${data.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('settingsModal')) closeSettings();
+            if (event.target == document.getElementById('historyModal')) closeHistory();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTheme();
+            updateDisplay();
+            ['totalInsulin', 'basalPercentage', 'temporaryBasal'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateResults);
+                document.getElementById(id).addEventListener('change', updateResults);
+            });
+            updateResults();
+        });
+    </script>
+</body>
+</html>
