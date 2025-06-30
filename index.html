@@ -48,20 +48,36 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
         @media (max-width: 768px) { 
             .grid { grid-template-columns: 1fr; gap: 30px; }
-            table { font-size: 12px; }
+            table { font-size: 11px; min-width: 280px; }
+            th, td { padding: 6px 4px; }
             .header-right { flex-wrap: wrap; gap: 6px; }
             .btn { padding: 6px 10px; font-size: 11px; min-width: auto; }
             .btn-history { background: #059669; }
             .btn-theme { background: #f59e0b; }
             h1 { font-size: 22px; }
             .header { flex-wrap: wrap; gap: 10px; }
+            .time-cell { min-width: 35px; font-size: 10px; }
+            .rate-cell { font-size: 10px; }
+            .percentage-cell { font-size: 10px; }
+            .container { padding: 15px; }
+            .patient-info { padding: 12px; font-size: 13px; }
+            .patient-info p { margin-bottom: 3px; }
+            .table-container { margin: 0 -15px; padding: 0 15px; }
         }
         
         @media (max-width: 480px) {
             .btn { padding: 8px; font-size: 16px; min-width: 44px; height: 44px; justify-content: center; }
             .btn span:last-child { display: none; }
             .header-right { gap: 8px; }
-            .container { padding: 20px; }
+            .container { padding: 10px; }
+            table { font-size: 10px; min-width: 260px; }
+            th, td { padding: 4px 2px; }
+            .time-cell { min-width: 30px; font-size: 9px; }
+            .rate-cell { font-size: 9px; }
+            .percentage-cell { font-size: 9px; }
+            th { font-size: 9px; padding: 6px 2px; }
+            .patient-info { font-size: 12px; padding: 10px; }
+            .table-container { margin: 0 -10px; padding: 0 10px; }
         }
         .form-section h2 { color: var(--text-color); font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         .current-settings { background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0ea5e9; }
@@ -93,8 +109,8 @@
         .patient-info p { margin-bottom: 4px; font-size: 14px; color: #4b5563; }
         [data-theme="dark"] .patient-info p { color: #d1d5db; }
         .patient-info strong { color: var(--text-color); }
-        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 300px; }
         th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--border-color); }
         th { background: #f3f4f6; font-weight: 600; color: var(--text-color); }
         [data-theme="dark"] th { background: #4b5563; }
@@ -572,7 +588,7 @@
                     <p><strong>Temporäre Basal:</strong> ${data.temporaryBasal}%</p>
                     <p><strong>Gesamt berechnet:</strong> ${total.toFixed(3)} I.E.</p>
                 </div><div class="table-container"><table><thead><tr>
-                    <th>Zeit</th><th style="text-align: right;">Soll (I.E.)</th><th style="text-align: right;">Gerundet (I.E.)</th><th style="text-align: right;">Anteil (%)</th>
+                    <th style="width: 20%;">Zeit</th><th style="text-align: right; width: 25%;">Soll</th><th style="text-align: right; width: 25%;">Gerundet</th><th style="text-align: right; width: 20%;">Anteil</th>
                 </tr></thead><tbody>`;
                 
                 rates.forEach(({time, original, rate, percent}) => {
