@@ -351,15 +351,15 @@
             border-radius: 0.5rem; 
             border: 1px solid var(--border-color);
             overflow: hidden;
-            min-width: 100%;
-            display: inline-block;
+            display: block;
+            width: 100%;
         }
         
         table { 
             width: 100%; 
             border-collapse: collapse; 
             font-size: clamp(0.875rem, 2.5vw, 1rem);
-            min-width: 320px;
+            table-layout: auto;
         }
         
         th, td { 
@@ -554,6 +554,10 @@
                 padding: 0.5rem;
             }
             
+            .container {
+                padding: 0.75rem;
+            }
+            
             .btn {
                 padding: 0.625rem;
                 min-width: 44px;
@@ -573,20 +577,117 @@
                 padding: 0.875rem;
             }
             
+            /* Kompakte Tabelle für Mobile */
             .table-wrapper {
-                position: relative;
+                margin: 0 -0.75rem;
+                padding: 0;
             }
             
-            .table-wrapper.scrollable .scroll-indicator {
-                display: block;
+            .table-container {
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+            
+            table {
+                font-size: 0.875rem;
+                min-width: 100%;
+                width: 100%;
+                table-layout: fixed;
+            }
+            
+            th, td {
+                padding: 0.5rem 0.4rem;
+            }
+            
+            th {
+                font-size: 0.8125rem;
+                font-weight: 600;
+            }
+            
+            /* Soll-Spalte auf Mobile ausblenden */
+            th:nth-child(2),
+            td:nth-child(2) {
+                display: none;
+            }
+            
+            /* Angepasste Spaltenbreiten für 3 Spalten */
+            .time-cell {
+                font-size: 0.875rem;
+                min-width: auto;
+                width: 35%;
+                text-align: left;
+                padding-left: 0.75rem;
+            }
+            
+            th:nth-child(3),
+            .rate-cell {
+                font-size: 0.9375rem;
+                width: 45%;
+                text-align: right;
+                padding-right: 0.5rem;
+            }
+            
+            th:nth-child(4),
+            .percentage-cell {
+                font-size: 0.875rem;
+                width: 20%;
+                text-align: right;
+                padding-right: 0.75rem;
             }
             
             .close {
                 font-size: 1.5rem;
             }
+            
+            .patient-info {
+                font-size: 0.8125rem;
+                padding: 0.75rem;
+            }
+            
+            .patient-info p {
+                margin-bottom: 0.125rem;
+            }
+            
+            h2 {
+                font-size: 1.125rem;
+                margin-bottom: 0.75rem;
+            }
         }
         
-        /* Landscape-Modus für kleine Geräte */
+        /* Sehr kleine Bildschirme (< 375px) */
+        @media (max-width: 374px) {
+            html {
+                font-size: 14px;
+            }
+            
+            .container {
+                padding: 0.5rem;
+            }
+            
+            th, td {
+                padding: 0.375rem 0.25rem;
+            }
+            
+            .time-cell {
+                font-size: 0.8125rem;
+                padding-left: 0.5rem;
+            }
+            
+            .rate-cell {
+                font-size: 0.875rem;
+                padding-right: 0.375rem;
+            }
+            
+            .percentage-cell {
+                font-size: 0.8125rem;
+                padding-right: 0.5rem;
+            }
+            
+            .patient-info {
+                font-size: 0.75rem;
+            }
+        }
         @media (max-height: 500px) and (orientation: landscape) {
             .modal-content {
                 margin: 2vh auto;
@@ -1086,6 +1187,8 @@
                 saveToHistory(data, rates);
                 createTrendChart(rates);
                 
+                const isMobile = window.innerWidth <= 767;
+                
                 let html = `<div class="patient-info">
                     <p><strong>Patient:</strong> ${data.name}</p>
                     <p><strong>Gesamtinsulin:</strong> ${data.totalInsulin} I.E.</p>
@@ -1093,8 +1196,13 @@
                     <p><strong>Altersgruppe:</strong> ${data.ageGroup} Jahre</p>
                     <p><strong>Pumpenschrittweite:</strong> ${data.pumpStep}</p>
                     <p><strong>Temporäre Basal:</strong> ${data.temporaryBasal}%</p>
-                    <p><strong>Gesamt berechnet:</strong> ${total.toFixed(3)} I.E.</p>
-                </div>
+                    <p><strong>Gesamt berechnet:</strong> ${total.toFixed(3)} I.E.</p>`;
+                
+                if (isMobile) {
+                    html += `<p style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">💡 Die Soll-Werte werden auf kleinen Bildschirmen ausgeblendet. Diese finden Sie im PDF-Export.</p>`;
+                }
+                
+                html += `</div>
                 <div class="table-wrapper" id="tableWrapper">
                     <div class="table-container">
                         <table>
@@ -1120,20 +1228,10 @@
                 html += `</tbody>
                         </table>
                     </div>
-                    <div class="scroll-indicator">← Wischen für mehr →</div>
                 </div>`;
                 
                 resultsDiv.innerHTML = html;
                 pdfBtn.disabled = false;
-                
-                // Check if table needs scrolling
-                setTimeout(() => {
-                    const wrapper = document.getElementById('tableWrapper');
-                    const table = wrapper.querySelector('.table-container');
-                    if (table.scrollWidth > table.clientWidth) {
-                        wrapper.classList.add('scrollable');
-                    }
-                }, 100);
             } else {
                 resultsDiv.innerHTML = `<div class="empty-state"><div class="empty-icon">⚙️</div><p>Bitte alle Felder ausfüllen.</p></div>`;
                 pdfBtn.disabled = true;
@@ -1192,7 +1290,17 @@
                 document.getElementById(id).addEventListener('input', updateResults);
                 document.getElementById(id).addEventListener('change', updateResults);
             });
+            // Initialize on load
             updateResults();
+            
+            // Handle window resize
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    updateResults();
+                }, 250);
+            });
             
             // Adjust viewport height for mobile browsers
             function setViewportHeight() {
@@ -1201,7 +1309,10 @@
             }
             setViewportHeight();
             window.addEventListener('resize', setViewportHeight);
-            window.addEventListener('orientationchange', setViewportHeight);
+            window.addEventListener('orientationchange', function() {
+                setTimeout(setViewportHeight, 100);
+                setTimeout(updateResults, 150);
+            });
         });
     </script>
 </body>
