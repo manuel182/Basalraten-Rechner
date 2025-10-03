@@ -541,6 +541,50 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* Time Input Groups */
+        .time-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .time-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .time-input input[type="time"] {
+            width: auto;
+            padding: 8px 12px;
+        }
+        
+        .factor-entry {
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: grid;
+            grid-template-columns: 100px 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .factor-entry input {
+            width: 100%;
+            padding: 8px;
+        }
+        
+        .factor-remove {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
         /* Print Styles */
         @media print {
             body {
@@ -577,7 +621,10 @@
                 📊 Basalraten
             </button>
             <button class="nav-tab" onclick="switchTab('factors')">
-                🍞 KE-Faktor & ISF
+                🍞 Essensfaktoren
+            </button>
+            <button class="nav-tab" onclick="switchTab('correction')">
+                🎯 Korrekturfaktoren
             </button>
             <button class="nav-tab" onclick="switchTab('history')">
                 📈 Verlauf & Trends
@@ -602,18 +649,11 @@
 
                     <div class="form-group">
                         <label for="basalPercentage">Anteil Basal (%)</label>
-                        <select id="basalPercentage">
-                            <option value="">Bitte wählen...</option>
-                            <option value="20">20%</option>
-                            <option value="25">25%</option>
-                            <option value="30">30%</option>
-                            <option value="35">35%</option>
-                            <option value="40">40%</option>
-                            <option value="45">45%</option>
-                            <option value="50">50%</option>
-                            <option value="55">55%</option>
-                            <option value="60">60%</option>
-                        </select>
+                        <input type="range" id="basalPercentage" min="0" max="100" value="50" oninput="updateBasalDisplay(this.value)">
+                        <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                            <span id="basalValue" style="font-weight: bold; color: #3b82f6;">50%</span>
+                            <span style="color: #64748b;">Bolus: <span id="bolusValue">50%</span></span>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -666,74 +706,123 @@
             </div>
         </div>
 
-        <!-- Tab: KE-Faktor & ISF -->
+        <!-- Tab: Essensfaktoren -->
         <div id="factors-tab" class="tab-content">
             <div class="card">
-                <h2>🍞 KE-Faktor & ISF Berechnung</h2>
+                <h2>🍞 Essensfaktoren (KE-Faktoren)</h2>
                 
-                <div class="info-box" id="factorsInfoBox">
-                    <p><strong>KE-Faktor:</strong> Wie viele Einheiten Insulin für 1 KE (10g Kohlenhydrate) benötigt werden.</p>
-                    <p><strong>ISF:</strong> Um wie viel mg/dl senkt 1 Einheit Insulin den Blutzucker.</p>
-                    <p style="margin-top: 8px;">⚠️ <strong>Für Kinder:</strong> Die Standard-Regeln (500er, 1800er) funktionieren bei Kindern nicht! Nutze die "Altersangepasst" Option oder gib eigene Werte ein.</p>
-                    <p style="margin-top: 8px;"><strong>Beispiel:</strong> Ein 5-jähriges Kind mit 13 IE Tagesinsulin hat typischerweise einen KE-Faktor von 0,5-1,5 IE/KE (nicht 38 IE/KE wie die 500er-Regel ergeben würde!).</p>
+                <div class="info-box">
+                    <p><strong>Essensfaktor:</strong> Wie viele Gramm Kohlenhydrate werden durch 1 Einheit Insulin abgedeckt.</p>
+                    <p style="margin-top: 8px;">Die Faktoren werden automatisch basierend auf der Altersgruppe und Tageszeit angepasst.</p>
                 </div>
 
-                <div class="calculation-grid">
-                    <div>
-                        <h3>KE-Faktor Berechnung</h3>
-                        <div class="form-group">
-                            <label for="keMethod">Berechnungsmethode</label>
-                            <select id="keMethod" onchange="updateKECalculation()">
-                                <option value="age">Altersangepasst (empfohlen)</option>
-                                <option value="500">500er-Regel (nur Erwachsene)</option>
-                                <option value="450">450er-Regel (nur Erwachsene)</option>
-                                <option value="400">400er-Regel (nur Erwachsene)</option>
-                                <option value="custom">Benutzerdefiniert</option>
-                            </select>
-                        </div>
-                        
-                        <div id="keWarning" class="warning" style="display: none; margin-top: 10px;">
-                            <span class="warning-icon">⚠️</span>
-                            <span id="keWarningText"></span>
-                        </div>
-                        
-                        <div id="customKEInput" class="form-group" style="display: none;">
-                            <label for="customKE">Eigener KE-Faktor (IE/KE)</label>
-                            <input type="number" id="customKE" placeholder="z.B. 1.5" step="0.1" min="0.1" max="10">
-                        </div>
-                        
-                        <div id="keResult" class="result-box">
-                            <h4>KE-Faktor</h4>
-                            <div class="result-value">-</div>
-                            <div class="result-detail">Bitte Gesamtinsulin eingeben</div>
-                        </div>
-                        
-                        <div id="keByTime" style="margin-top: 20px;"></div>
-                    </div>
+                <div class="form-group">
+                    <label for="keFormula">Berechnungsformel</label>
+                    <select id="keFormula" onchange="updateMealFactors()">
+                        <option value="auto">✓ Automatisch (empfohlen)</option>
+                        <optgroup label="Bitte Altersgruppe wählen">
+                            <option disabled>Formeln werden nach Altersgruppe angezeigt</option>
+                        </optgroup>
+                    </select>
+                </div>
 
-                    <div>
-                        <h3>ISF Berechnung</h3>
-                        <div class="form-group">
-                            <label for="isfMethod">Berechnungsmethode</label>
-                            <select id="isfMethod" onchange="updateISFCalculation()">
-                                <option value="age">Altersangepasst (empfohlen)</option>
-                                <option value="1800">1800er-Regel (mg/dl, Erwachsene)</option>
-                                <option value="100">100er-Regel (mmol/l, Erwachsene)</option>
-                            </select>
+                <div class="form-group">
+                    <h3>⏰ Hauptmahlzeiten definieren</h3>
+                    
+                    <div class="time-input-group">
+                        <div>
+                            <label for="breakfast">Frühstück</label>
+                            <input type="time" id="breakfast" value="07:00" onchange="updateMealFactors()">
                         </div>
-                        
-                        <div id="isfResult" class="result-box">
-                            <h4>Insulin-Sensitivitätsfaktor</h4>
-                            <div class="result-value">-</div>
-                            <div class="result-detail">Bitte Gesamtinsulin eingeben</div>
+                        <div>
+                            <label for="lunch">Mittagessen</label>
+                            <input type="time" id="lunch" value="12:00" onchange="updateMealFactors()">
                         </div>
-                        
-                        <div id="isfByTime" style="margin-top: 20px;"></div>
+                    </div>
+                    
+                    <div class="time-input-group">
+                        <div>
+                            <label for="dinner">Abendessen</label>
+                            <input type="time" id="dinner" value="18:00" onchange="updateMealFactors()">
+                        </div>
+                        <div style="opacity: 0.5;">
+                            <label>Jausen</label>
+                            <input type="text" value="Automatisch berechnet" disabled style="background: #0f172a; color: #64748b;">
+                        </div>
+                    </div>
+                    
+                    <div class="info-box" style="margin-top: 16px;">
+                        <p style="font-size: 12px;">📍 <strong>Zeitfenster:</strong> Hauptmahlzeiten gelten von -30min bis +2h nach der eingegebenen Zeit. Zwischenmahlzeiten füllen automatisch die Lücken.</p>
+                    </div>
+                </div>
+
+                <div id="mealFactorsResult" class="result-box">
+                    <h4>Berechnete Essensfaktoren</h4>
+                    <div id="mealFactorsList">
+                        <p class="result-detail">Bitte Grundeinstellungen konfigurieren</p>
                     </div>
                 </div>
 
                 <div class="chart-container">
-                    <canvas id="factorsChart"></canvas>
+                    <canvas id="mealFactorsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Korrekturfaktoren -->
+        <div id="correction-tab" class="tab-content">
+            <div class="card">
+                <h2>🎯 Korrekturfaktoren (ISF)</h2>
+                
+                <div class="info-box">
+                    <p><strong>Korrekturfaktor (ISF):</strong> Um wie viel mg/dl senkt 1 Einheit Insulin den Blutzucker.</p>
+                    <p style="margin-top: 8px;"><strong>Zeitfenster-Schema:</strong></p>
+                    <p style="font-size: 12px; margin-left: 20px;">• <strong>No.1:</strong> 0:00 bis Aufstehzeit -30min (Nacht)</p>
+                    <p style="font-size: 12px; margin-left: 20px;">• <strong>No.2:</strong> Aufstehzeit -30min bis Einschlafzeit +30min (Tag)</p>
+                    <p style="font-size: 12px; margin-left: 20px;">• <strong>No.3:</strong> Einschlafzeit +30min bis 24:00 (Abend/Nacht)</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="isfFormula">Berechnungsformel</label>
+                    <select id="isfFormula" onchange="updateCorrectionFactors()">
+                        <option value="auto">✓ Automatisch (empfohlen)</option>
+                        <optgroup label="Bitte Altersgruppe wählen">
+                            <option disabled>Formeln werden nach Altersgruppe angezeigt</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <h3>⏰ Tageszeiten definieren</h3>
+                    
+                    <div class="time-input-group">
+                        <div>
+                            <label for="wakeTime">Aufstehzeit</label>
+                            <input type="time" id="wakeTime" value="06:00" onchange="updateCorrectionFactors()">
+                        </div>
+                        <div>
+                            <label for="bedTime">Einschlafzeit</label>
+                            <input type="time" id="bedTime" value="21:00" onchange="updateCorrectionFactors()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h3>📊 Zeitfenster für Korrekturfaktoren</h3>
+                    <div id="correctionWindows">
+                        <!-- Wird dynamisch generiert -->
+                    </div>
+                </div>
+
+                <div id="correctionFactorsResult" class="result-box">
+                    <h4>Berechnete Korrekturfaktoren</h4>
+                    <div id="correctionFactorsList">
+                        <p class="result-detail">Bitte Grundeinstellungen konfigurieren</p>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="correctionFactorsChart"></canvas>
                 </div>
             </div>
         </div>
@@ -788,9 +877,9 @@
                 <label for="defaultAgeGroup">Altersgruppe</label>
                 <select id="defaultAgeGroup">
                     <option value="">Bitte wählen...</option>
-                    <option value="1-5">1-5 Jahre</option>
-                    <option value="6-11">6-11 Jahre</option>
-                    <option value="12+">12+ Jahre</option>
+                    <option value="1-5">1-5 Jahre (Kleinkinder)</option>
+                    <option value="6-11">6-11 Jahre (Schulkinder)</option>
+                    <option value="12+">12+ Jahre (Jugendliche/Erwachsene)</option>
                 </select>
             </div>
 
@@ -899,76 +988,40 @@
             ]
         };
 
-        // Zeitbasierte Faktoren für KE und ISF
-        const timeFactors = {
-            'KE': {
-                '06-10': 1.2,  // Morgens mehr Insulin nötig
-                '10-14': 1.0,  // Mittags normal
-                '14-18': 0.9,  // Nachmittags etwas weniger
-                '18-22': 1.0,  // Abends normal
-                '22-06': 1.1   // Nachts etwas mehr
+        // Insulin-Empfindlichkeitskurven basierend auf Altersgruppe
+        const insulinSensitivityCurves = {
+            '1-5': { // Kleinkinder
+                '00': 0.35, '01': 0.32, '02': 0.31, '03': 0.32, '04': 0.35, '05': 0.40,
+                '06': 0.45, '07': 0.43, '08': 0.40, '09': 0.35, '10': 0.30, '11': 0.28,
+                '12': 0.27, '13': 0.30, '14': 0.35, '15': 0.40, '16': 0.45, '17': 0.50,
+                '18': 0.52, '19': 0.55, '20': 0.58, '21': 0.55, '22': 0.50, '23': 0.42
             },
-            'ISF': {
-                '06-10': 0.8,  // Morgens weniger sensitiv
-                '10-14': 1.0,  // Mittags normal
-                '14-18': 1.1,  // Nachmittags sensitiver
-                '18-22': 1.0,  // Abends normal
-                '22-06': 0.9   // Nachts weniger sensitiv
+            '6-11': { // Schulkinder
+                '00': 0.40, '01': 0.41, '02': 0.42, '03': 0.45, '04': 0.48, '05': 0.50,
+                '06': 0.48, '07': 0.43, '08': 0.38, '09': 0.32, '10': 0.30, '11': 0.28,
+                '12': 0.29, '13': 0.30, '14': 0.33, '15': 0.38, '16': 0.43, '17': 0.46,
+                '18': 0.45, '19': 0.44, '20': 0.44, '21': 0.43, '22': 0.42, '23': 0.41
+            },
+            '12+': { // Jugendliche/Erwachsene
+                '00': 0.33, '01': 0.36, '02': 0.41, '03': 0.48, '04': 0.54, '05': 0.58,
+                '06': 0.56, '07': 0.50, '08': 0.42, '09': 0.37, '10': 0.34, '11': 0.32,
+                '12': 0.32, '13': 0.33, '14': 0.35, '15': 0.38, '16': 0.43, '17': 0.44,
+                '18': 0.43, '19': 0.39, '20': 0.36, '21': 0.33, '22': 0.32, '23': 0.32
             }
         };
 
         let basalChart = null;
-        let factorsChart = null;
+        let mealFactorsChart = null;
+        let correctionFactorsChart = null;
         let trendChart = null;
         let currentResults = null;
 
-        // Info-Box basierend auf Altersgruppe anpassen
-        function updateFactorsInfoBox() {
-            const data = getFormData();
-            const infoBox = document.getElementById('factorsInfoBox');
-            if (!infoBox) return;
-            
-            let html = `
-                <p><strong>KE-Faktor:</strong> Wie viele Einheiten Insulin für 1 KE (10g Kohlenhydrate) benötigt werden.</p>
-                <p><strong>ISF:</strong> Um wie viel mg/dl senkt 1 Einheit Insulin den Blutzucker.</p>
-            `;
-            
-            if (data.ageGroup === '1-5') {
-                html += `
-                    <p style="margin-top: 8px;">👶 <strong>Kleinkinder (1-5 Jahre):</strong></p>
-                    <ul style="margin-left: 20px; font-size: 13px;">
-                        <li>KE-Faktor typisch: 0,5-1,5 IE/KE</li>
-                        <li>ISF: 1500er-Regel (statt 1800er)</li>
-                        <li>Große individuelle Unterschiede!</li>
-                    </ul>
-                `;
-            } else if (data.ageGroup === '6-11') {
-                html += `
-                    <p style="margin-top: 8px;">🧒 <strong>Schulkinder (6-11 Jahre):</strong></p>
-                    <ul style="margin-left: 20px; font-size: 13px;">
-                        <li>KE-Faktor typisch: 0,8-2,0 IE/KE</li>
-                        <li>ISF: 1650er-Regel</li>
-                        <li>Wachstumsschübe beachten!</li>
-                    </ul>
-                `;
-            } else if (data.ageGroup === '12+') {
-                html += `
-                    <p style="margin-top: 8px;">👦 <strong>Jugendliche (12+ Jahre):</strong></p>
-                    <ul style="margin-left: 20px; font-size: 13px;">
-                        <li>KE-Faktor typisch: 1,5-3,0 IE/KE</li>
-                        <li>ISF: 1700er-Regel</li>
-                        <li>Pubertät erhöht oft den Insulinbedarf</li>
-                    </ul>
-                `;
-            } else {
-                html += `
-                    <p style="margin-top: 8px;">⚠️ <strong>Wichtig:</strong> Bitte Altersgruppe in den Einstellungen wählen für altersgerechte Berechnungen!</p>
-                `;
-            }
-            
-            infoBox.innerHTML = html;
+        // Update Basal Display
+        function updateBasalDisplay(value) {
+            document.getElementById('basalValue').textContent = value + '%';
+            document.getElementById('bolusValue').textContent = (100 - value) + '%';
         }
-        
+
         // Tab-Wechsel
         function switchTab(tabName) {
             // Tabs deaktivieren
@@ -979,98 +1032,157 @@
             event.target.classList.add('active');
             document.getElementById(`${tabName}-tab`).classList.add('active');
             
-            // Charts neu rendern wenn nötig
+            // Charts und Berechnungen aktualisieren
             if (tabName === 'history') {
                 updateHistoryView();
             } else if (tabName === 'factors') {
-                updateKEDropdown();
-                updateISFDropdown();
-                updateFactorsInfoBox();
-                updateKECalculation();
-                updateISFCalculation();
+                updateKEFormulaOptions();
+                updateMealFactors();
+            } else if (tabName === 'correction') {
+                updateISFFormulaOptions();
+                updateCorrectionFactors();
             }
         }
         
-        // Dropdown-Menüs basierend auf Altersgruppe anpassen
-        function updateKEDropdown() {
-            const data = getFormData();
-            const keSelect = document.getElementById('keMethod');
-            const currentValue = keSelect.value;
+        // KE-Formel Optionen basierend auf Altersgruppe
+        function updateKEFormulaOptions() {
+            const s = getSettings();
+            const select = document.getElementById('keFormula');
+            const currentValue = select.value;
             
-            // Dropdown-Optionen neu aufbauen
-            keSelect.innerHTML = '';
+            let html = '<option value="auto">✓ Automatisch (empfohlen)</option>';
             
-            if (data.ageGroup && (data.ageGroup === '1-5' || data.ageGroup === '6-11')) {
-                // Für Kinder: Altersangepasst als erste Option
-                keSelect.innerHTML = `
-                    <option value="age" selected>Automatisch (${data.ageGroup} Jahre)</option>
-                    <option value="custom">Eigener Wert eingeben</option>
-                    <option value="500" disabled>500er-Regel (nur Erwachsene)</option>
-                    <option value="450" disabled>450er-Regel (nur Erwachsene)</option>
-                    <option value="400" disabled>400er-Regel (nur Erwachsene)</option>
+            if (s.age === '1-5') {
+                html += `
+                    <optgroup label="Empfohlene Formeln (1-5 Jahre)">
+                        <option value="250">250er-Regel ⚫⚫⚫ (stark)</option>
+                        <option value="275">275er-Regel ⚫⚫⚪ (mittel)</option>
+                        <option value="300k">300er-Regel ⚫⚪⚪ (sanft)</option>
+                    </optgroup>
+                    <optgroup label="Andere Formeln">
+                        <option value="350" disabled>350er (zu schwach für Kleinkinder)</option>
+                        <option value="400" disabled>400er (zu schwach für Kleinkinder)</option>
+                        <option value="500" disabled>500er (zu schwach für Kleinkinder)</option>
+                    </optgroup>
                 `;
-            } else if (data.ageGroup === '12+') {
-                // Für Jugendliche: Beide Optionen
-                keSelect.innerHTML = `
-                    <option value="age" selected>Automatisch (${data.ageGroup} Jahre)</option>
-                    <option value="custom">Eigener Wert eingeben</option>
-                    <option value="350">350er-Regel (Jugendliche)</option>
-                    <option value="400">400er-Regel</option>
-                    <option value="450">450er-Regel</option>
-                    <option value="500">500er-Regel (Erwachsene)</option>
+            } else if (s.age === '6-11') {
+                html += `
+                    <optgroup label="Empfohlene Formeln (6-11 Jahre)">
+                        <option value="300">300er-Regel ⚫⚫⚫ (stark)</option>
+                        <option value="325">325er-Regel ⚫⚫⚪ (mittel)</option>
+                        <option value="350">350er-Regel ⚫⚪⚪ (sanft)</option>
+                    </optgroup>
+                    <optgroup label="Andere Formeln">
+                        <option value="250">250er (eher für Kleinkinder)</option>
+                        <option value="400">400er (eher für Jugendliche)</option>
+                        <option value="500" disabled>500er (zu schwach für Kinder)</option>
+                    </optgroup>
+                `;
+            } else if (s.age === '12+') {
+                html += `
+                    <optgroup label="Empfohlene Formeln (12+ Jahre)">
+                        <option value="400">400er-Regel ⚫⚫⚫ (stark/Resistenz)</option>
+                        <option value="450">450er-Regel ⚫⚫⚪ (mittel)</option>
+                        <option value="500">500er-Regel ⚫⚪⚪ (Standard)</option>
+                    </optgroup>
+                    <optgroup label="Andere Formeln">
+                        <option value="350">350er (höhere Sensitivität)</option>
+                        <option value="300">300er (sehr sensitiv)</option>
+                    </optgroup>
                 `;
             } else {
-                // Keine Altersgruppe: Alle Optionen
-                keSelect.innerHTML = `
-                    <option value="age">Altersangepasst (empfohlen)</option>
-                    <option value="500">500er-Regel (nur Erwachsene)</option>
-                    <option value="450">450er-Regel (nur Erwachsene)</option>
-                    <option value="400">400er-Regel (nur Erwachsene)</option>
-                    <option value="custom">Benutzerdefiniert</option>
+                // Keine Altersgruppe gewählt
+                html += `
+                    <optgroup label="Bitte Altersgruppe wählen">
+                        <option disabled>Formeln werden nach Altersgruppe angezeigt</option>
+                    </optgroup>
                 `;
             }
             
+            select.innerHTML = html;
+            
             // Versuche vorherigen Wert wiederherzustellen
-            if (currentValue && keSelect.querySelector(`option[value="${currentValue}"]`)) {
-                keSelect.value = currentValue;
+            if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                select.value = currentValue;
+            } else {
+                select.value = 'auto';
             }
         }
         
-        function updateISFDropdown() {
-            const data = getFormData();
-            const isfSelect = document.getElementById('isfMethod');
-            const currentValue = isfSelect.value;
+        // ISF-Formel Optionen basierend auf Altersgruppe
+        function updateISFFormulaOptions() {
+            const s = getSettings();
+            const select = document.getElementById('isfFormula');
+            const currentValue = select.value;
             
-            // Dropdown-Optionen neu aufbauen
-            isfSelect.innerHTML = '';
+            let html = '<option value="auto">✓ Automatisch (empfohlen)</option>';
             
-            if (data.ageGroup && (data.ageGroup === '1-5' || data.ageGroup === '6-11')) {
-                // Für Kinder: Altersangepasst als erste Option
-                isfSelect.innerHTML = `
-                    <option value="age" selected>Automatisch (${data.ageGroup} Jahre)</option>
-                    <option value="1800" disabled>1800er-Regel (nur Erwachsene)</option>
-                    <option value="100" disabled>100er-Regel (nur Erwachsene)</option>
+            if (s.age === '1-5') {
+                html += `
+                    <optgroup label="Empfohlene Formeln (1-5 Jahre)">
+                        <option value="2200">2200er-Regel ⚪⚪⚪ (sehr sanft)</option>
+                        <option value="2000">2000er-Regel ⚫⚪⚪ (sanft)</option>
+                        <option value="1900">1900er-Regel ⚫⚫⚪ (mittel)</option>
+                    </optgroup>
+                    <optgroup label="Andere Formeln">
+                        <option value="1800" disabled>1800er (zu stark für Kleinkinder)</option>
+                        <option value="1700" disabled>1700er (zu stark für Kleinkinder)</option>
+                        <option value="1500" disabled>1500er (viel zu stark)</option>
+                    </optgroup>
+                    <optgroup label="mmol/l">
+                        <option value="120">120er-Regel (mmol/l, sanft)</option>
+                        <option value="100">100er-Regel (mmol/l)</option>
+                    </optgroup>
                 `;
-            } else if (data.ageGroup === '12+') {
-                // Für Jugendliche: Beide Optionen
-                isfSelect.innerHTML = `
-                    <option value="age" selected>Automatisch (${data.ageGroup} Jahre)</option>
-                    <option value="1700">1700er-Regel (Jugendliche)</option>
-                    <option value="1800">1800er-Regel (mg/dl)</option>
-                    <option value="100">100er-Regel (mmol/l)</option>
+            } else if (s.age === '6-11') {
+                html += `
+                    <optgroup label="Empfohlene Formeln (6-11 Jahre)">
+                        <option value="2000">2000er-Regel ⚪⚪⚪ (sanft)</option>
+                        <option value="1900">1900er-Regel ⚫⚪⚪ (mittel-sanft)</option>
+                        <option value="1800">1800er-Regel ⚫⚫⚪ (mittel)</option>
+                    </optgroup>
+                    <optgroup label="Andere Formeln">
+                        <option value="2200">2200er (sehr sanft)</option>
+                        <option value="1700">1700er (etwas stärker)</option>
+                        <option value="1500" disabled>1500er (zu stark für Kinder)</option>
+                    </optgroup>
+                    <optgroup label="mmol/l">
+                        <option value="110">110er-Regel (mmol/l, sanft)</option>
+                        <option value="100">100er-Regel (mmol/l)</option>
+                    </optgroup>
+                `;
+            } else if (s.age === '12+') {
+                html += `
+                    <optgroup label="Empfohlene Formeln (12+ Jahre)">
+                        <option value="1800">1800er-Regel ⚫⚫⚪ (Standard)</option>
+                        <option value="1700">1700er-Regel ⚫⚫⚫ (Jugendliche)</option>
+                        <option value="1500">1500er-Regel ⚫⚫⚫ (stark/Resistenz)</option>
+                    </optgroup>
+                    <optgroup label="Andere Formeln">
+                        <option value="2000">2000er (sensitiv)</option>
+                        <option value="1900">1900er (etwas sensitiver)</option>
+                    </optgroup>
+                    <optgroup label="mmol/l">
+                        <option value="100">100er-Regel (mmol/l, Standard)</option>
+                        <option value="83">83er-Regel (mmol/l, stark)</option>
+                    </optgroup>
                 `;
             } else {
-                // Keine Altersgruppe: Alle Optionen
-                isfSelect.innerHTML = `
-                    <option value="age">Altersangepasst (empfohlen)</option>
-                    <option value="1800">1800er-Regel (mg/dl, Erwachsene)</option>
-                    <option value="100">100er-Regel (mmol/l, Erwachsene)</option>
+                // Keine Altersgruppe gewählt
+                html += `
+                    <optgroup label="Bitte Altersgruppe wählen">
+                        <option disabled>Formeln werden nach Altersgruppe angezeigt</option>
+                    </optgroup>
                 `;
             }
             
+            select.innerHTML = html;
+            
             // Versuche vorherigen Wert wiederherzustellen
-            if (currentValue && isfSelect.querySelector(`option[value="${currentValue}"]`)) {
-                isfSelect.value = currentValue;
+            if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                select.value = currentValue;
+            } else {
+                select.value = 'auto';
             }
         }
 
@@ -1112,14 +1224,11 @@
             closeSettings();
             updateDisplay();
             
-            // Dropdowns und Info-Box aktualisieren wenn Faktoren-Tab aktiv ist
-            if (document.getElementById('factors-tab').classList.contains('active')) {
-                updateKEDropdown();
-                updateISFDropdown();
-                updateFactorsInfoBox();
-                updateKECalculation();
-                updateISFCalculation();
-            }
+            // Formel-Dropdowns aktualisieren
+            updateKEFormulaOptions();
+            updateISFFormulaOptions();
+            updateMealFactors();
+            updateCorrectionFactors();
         }
 
         // Display Update
@@ -1146,10 +1255,12 @@
         // Berechnungen
         function getFormData() {
             const s = getSettings();
+            const basalValue = parseInt(document.getElementById('basalPercentage').value);
+            
             return {
                 name: s.name || 'Patient',
                 totalInsulin: parseFloat(document.getElementById('totalInsulin').value),
-                basalPercentage: parseFloat(document.getElementById('basalPercentage').value),
+                basalPercentage: basalValue,
                 pumpStep: parseFloat(s.step),
                 ageGroup: s.age,
                 temporaryBasal: parseFloat(document.getElementById('temporaryBasal').value) || 100
@@ -1187,12 +1298,6 @@
             
             updateResults(results);
             updateBasalChart(results);
-            
-            // KE und ISF automatisch aktualisieren
-            if (document.getElementById('factors-tab').classList.contains('active')) {
-                updateKECalculation();
-                updateISFCalculation();
-            }
             
             document.getElementById('saveBtn').disabled = false;
             document.getElementById('pdfBtn').disabled = false;
@@ -1329,219 +1434,195 @@
             });
         }
 
-        // KE-Faktor Berechnung
-        function updateKECalculation() {
-            const data = getFormData();
-            const method = document.getElementById('keMethod').value;
-            const customInput = document.getElementById('customKEInput');
+        // Essensfaktoren berechnen
+        function updateMealFactors() {
+            const s = getSettings();
+            const totalInsulin = parseFloat(document.getElementById('totalInsulin').value);
+            const formula = document.getElementById('keFormula').value;
             
-            // Automatisch altersangepasst wählen wenn Altersgruppe gesetzt
-            if (data.ageGroup && method !== 'custom') {
-                document.getElementById('keMethod').value = 'age';
-            }
-            
-            // Zeige/Verstecke Custom Input
-            customInput.style.display = method === 'custom' ? 'block' : 'none';
-            
-            if (!data.totalInsulin && method !== 'custom') {
-                document.querySelector('#keResult .result-value').textContent = '-';
-                document.querySelector('#keResult .result-detail').textContent = 'Bitte Gesamtinsulin eingeben';
+            if (!s.age || !totalInsulin) {
+                document.getElementById('mealFactorsList').innerHTML = 
+                    '<p class="result-detail">Bitte Altersgruppe und Gesamtinsulin eingeben</p>';
                 return;
             }
             
-            let keFactor;
-            let detailText = '';
+            // Basis Essensfaktor berechnen basierend auf gewählter Formel
+            let baseKEFactor;
             
-            if (method === 'custom') {
-                keFactor = parseFloat(document.getElementById('customKE').value) || 0;
-                if (keFactor === 0) {
-                    document.querySelector('#keResult .result-value').textContent = '-';
-                    document.querySelector('#keResult .result-detail').textContent = 'Bitte KE-Faktor eingeben';
-                    return;
-                }
-                detailText = 'Benutzerdefiniert';
-            } else {
-                // Immer altersangepasste Berechnung verwenden wenn Altersgruppe vorhanden
-                const ageGroup = data.ageGroup;
-                if (!ageGroup) {
-                    document.querySelector('#keResult .result-value').textContent = '-';
-                    document.querySelector('#keResult .result-detail').textContent = 'Bitte Altersgruppe in Einstellungen wählen';
-                    return;
-                }
-                
-                // Altersangepasste Formeln
-                if (ageGroup === '1-5') {
-                    // Kleinkinder: Basis 0.5-1.0 IE/KE
-                    keFactor = Math.min(3.0, Math.max(0.5, data.totalInsulin * 0.08));
-                    detailText = '1-5 Jahre (Kleinkind-Formel)';
-                } else if (ageGroup === '6-11') {
-                    // Schulkinder: Basis 0.8-1.5 IE/KE  
-                    keFactor = Math.min(4.0, Math.max(0.8, data.totalInsulin * 0.10));
-                    detailText = '6-11 Jahre (Schulkind-Formel)';
+            if (formula === 'auto') {
+                // Automatische altersangepasste Berechnung
+                if (s.age === '1-5') {
+                    baseKEFactor = 275 / totalInsulin;
+                } else if (s.age === '6-11') {
+                    baseKEFactor = 325 / totalInsulin;
                 } else {
-                    // Jugendliche: Basis 1.0-2.5 IE/KE, verwende modifizierte Formel
-                    // Statt 300er-Regel, nutze einen altersangepassten Faktor
-                    keFactor = Math.min(5.0, Math.max(1.0, data.totalInsulin * 0.15));
-                    detailText = '12+ Jahre (Jugend-Formel)';
+                    baseKEFactor = 450 / totalInsulin;
                 }
+            } else {
+                // Numerische Regel (250er, 300er, etc.)
+                const ruleNumber = parseInt(formula.replace('k', ''));
+                baseKEFactor = ruleNumber / totalInsulin;
+            }
+            
+            // Mahlzeiten-Zeiten holen
+            const breakfast = document.getElementById('breakfast').value;
+            const lunch = document.getElementById('lunch').value;
+            const dinner = document.getElementById('dinner').value;
+            
+            if (!breakfast || !lunch || !dinner) {
+                document.getElementById('mealFactorsList').innerHTML = 
+                    '<p class="result-detail">Bitte mindestens Frühstück, Mittag- und Abendessen eingeben</p>';
+                return;
+            }
+            
+            // Zeitfenster berechnen (wie im Bild)
+            const mealWindows = [];
+            
+            // Helper-Funktion für Zeit-Berechnungen
+            function timeToMinutes(time) {
+                const [h, m] = time.split(':').map(Number);
+                return h * 60 + m;
+            }
+            
+            function minutesToTime(minutes) {
+                const h = Math.floor(minutes / 60) % 24;
+                const m = minutes % 60;
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            }
+            
+            // Frühstück: -30min bis +2h
+            const breakfastMin = timeToMinutes(breakfast);
+            mealWindows.push({
+                name: 'Frühstück',
+                baseTime: breakfast,
+                start: minutesToTime(breakfastMin - 30),
+                end: minutesToTime(breakfastMin + 120),
+                type: 'main'
+            });
+            
+            // Zwischenmahlzeit vormittags
+            const lunchMin = timeToMinutes(lunch);
+            mealWindows.push({
+                name: 'Vormittags-Jause',
+                start: minutesToTime(breakfastMin + 120),
+                end: minutesToTime(lunchMin - 30),
+                type: 'snack'
+            });
+            
+            // Mittagessen: -30min bis +2h
+            mealWindows.push({
+                name: 'Mittagessen',
+                baseTime: lunch,
+                start: minutesToTime(lunchMin - 30),
+                end: minutesToTime(lunchMin + 120),
+                type: 'main'
+            });
+            
+            // Zwischenmahlzeit nachmittags
+            const dinnerMin = timeToMinutes(dinner);
+            mealWindows.push({
+                name: 'Nachmittags-Jause',
+                start: minutesToTime(lunchMin + 120),
+                end: minutesToTime(dinnerMin - 30),
+                type: 'snack'
+            });
+            
+            // Abendessen: -30min bis +2h
+            mealWindows.push({
+                name: 'Abendessen',
+                baseTime: dinner,
+                start: minutesToTime(dinnerMin - 30),
+                end: minutesToTime(dinnerMin + 120),
+                type: 'main'
+            });
+            
+            // Spät-Mahlzeit
+            mealWindows.push({
+                name: 'Spät-Mahlzeit',
+                start: minutesToTime(dinnerMin + 120),
+                end: '24:00',
+                type: 'snack'
+            });
+            
+            // Faktoren basierend auf Insulin-Empfindlichkeit berechnen
+            const sensitivity = insulinSensitivityCurves[s.age];
+            let html = `
+                <div style="background: #334155; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <div style="font-size: 12px; color: #94a3b8;">Formel: ${formula === 'auto' ? 'Automatisch' : formula + 'er-Regel'}</div>
+                    <div style="font-size: 14px; color: #60a5fa; margin-top: 4px;">Basis-Faktor: ${baseKEFactor.toFixed(1)} g KH/IE</div>
+                </div>
+                <div style="display: grid; gap: 12px;">
+            `;
+            
+            const chartLabels = [];
+            const chartData = [];
+            
+            for (const window of mealWindows) {
+                // Durchschnitts-Empfindlichkeit im Zeitfenster
+                const startHour = parseInt(window.start.split(':')[0]);
+                const endHour = window.end === '24:00' ? 24 : parseInt(window.end.split(':')[0]);
+                let avgSensitivity = 0;
+                let count = 0;
                 
-                // Warnung wenn Erwachsenen-Regel bei Kindern gewählt
-                if ((method === '500' || method === '450' || method === '400') && (ageGroup === '1-5' || ageGroup === '6-11')) {
-                    const adultKE = parseInt(method) / data.totalInsulin;
-                    detailText += ` (Erwachsenen-Formel würde ${adultKE.toFixed(1)} IE/KE ergeben!)`;
+                for (let h = startHour; h <= endHour; h++) {
+                    const hour = (h % 24).toString().padStart(2, '0');
+                    avgSensitivity += sensitivity[hour] || 0.5;
+                    count++;
                 }
-            }
-            
-            document.querySelector('#keResult .result-value').textContent = keFactor.toFixed(2) + ' IE/KE';
-            document.querySelector('#keResult .result-detail').textContent = detailText;
-            
-            // Zeitbasierte KE-Faktoren
-            let timeBasedHtml = '<h4 style="font-size: 16px; margin-bottom: 12px;">Zeitabhängige KE-Faktoren</h4>';
-            
-            if (data.ageGroup) {
-                timeBasedHtml += `<div class="info-box" style="margin-bottom: 12px;">
-                    <p style="font-size: 12px;">📊 Automatisch angepasst für <strong>${data.ageGroup} Jahre</strong>. 
-                    Diese Werte sind Richtwerte und müssen individuell durch BZ-Messungen optimiert werden.</p>
-                </div>`;
-            }
-            
-            timeBasedHtml += '<div style="display: grid; gap: 8px;">';
-            
-            for (const [timeRange, factor] of Object.entries(timeFactors.KE)) {
-                const adjustedKE = (keFactor * factor).toFixed(2);
-                timeBasedHtml += `
-                    <div style="display: flex; justify-content: space-between; padding: 8px; background: #1e293b; border-radius: 8px;">
-                        <span>${timeRange} Uhr:</span>
-                        <strong style="color: #60a5fa;">${adjustedKE} IE/KE</strong>
+                avgSensitivity = count > 0 ? avgSensitivity / count : 0.5;
+                
+                // Je höher die Empfindlichkeit, desto weniger KH pro IE
+                const adjustedFactor = baseKEFactor * (1 / (0.5 + avgSensitivity));
+                const roundedFactor = Math.round(adjustedFactor * 10) / 10;
+                
+                chartLabels.push(window.name);
+                chartData.push(roundedFactor);
+                
+                const bgColor = window.type === 'main' ? '#1e3a8a' : '#1e293b';
+                const borderColor = window.type === 'main' ? '#3b82f6' : '#475569';
+                
+                html += `
+                    <div style="background: ${bgColor}; padding: 16px; border-radius: 8px; border-left: 4px solid ${borderColor};">
+                        <div style="display: grid; grid-template-columns: 1fr auto; align-items: center;">
+                            <div>
+                                <strong>${window.name}</strong>
+                                <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">
+                                    ${window.start} - ${window.end} Uhr
+                                    ${window.baseTime ? `<br>Mahlzeit: ${window.baseTime} Uhr` : ''}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="color: #60a5fa; font-size: 24px; font-weight: bold;">${roundedFactor}</span>
+                                <div style="color: #94a3b8; font-size: 12px;">g KH/IE</div>
+                            </div>
+                        </div>
                     </div>
                 `;
             }
             
-            timeBasedHtml += '</div>';
-            document.getElementById('keByTime').innerHTML = timeBasedHtml;
+            html += '</div>';
+            document.getElementById('mealFactorsList').innerHTML = html;
             
-            updateFactorsChart();
+            // Chart aktualisieren
+            updateMealFactorsChart(chartLabels, chartData);
         }
 
-        // ISF Berechnung
-        function updateISFCalculation() {
-            const data = getFormData();
-            const method = document.getElementById('isfMethod').value;
+        function updateMealFactorsChart(labels, data) {
+            if (typeof Chart === 'undefined' || !labels.length) return;
             
-            // Automatisch altersangepasst wählen wenn Altersgruppe gesetzt
-            if (data.ageGroup && method !== 'age') {
-                document.getElementById('isfMethod').value = 'age';
+            const ctx = document.getElementById('mealFactorsChart').getContext('2d');
+            
+            if (mealFactorsChart) {
+                mealFactorsChart.destroy();
             }
             
-            if (!data.totalInsulin) {
-                document.querySelector('#isfResult .result-value').textContent = '-';
-                document.querySelector('#isfResult .result-detail').textContent = 'Bitte Gesamtinsulin eingeben';
-                return;
-            }
-            
-            let isf;
-            let unit = 'mg/dl';
-            let detailText = '';
-            
-            // Immer altersangepasste Berechnung verwenden wenn Altersgruppe vorhanden
-            const ageGroup = data.ageGroup;
-            if (!ageGroup) {
-                document.querySelector('#isfResult .result-value').textContent = '-';
-                document.querySelector('#isfResult .result-detail').textContent = 'Bitte Altersgruppe in Einstellungen wählen';
-                return;
-            }
-            
-            // Altersangepasste ISF-Berechnung
-            if (ageGroup === '1-5') {
-                // Kleinkinder: 1500er-Regel
-                isf = 1500 / data.totalInsulin;
-                detailText = '1-5 Jahre (1500er-Regel)';
-            } else if (ageGroup === '6-11') {
-                // Schulkinder: 1650er-Regel
-                isf = 1650 / data.totalInsulin;
-                detailText = '6-11 Jahre (1650er-Regel)';
-            } else {
-                // Jugendliche: 1700er-Regel
-                isf = 1700 / data.totalInsulin;
-                detailText = '12+ Jahre (1700er-Regel)';
-            }
-            
-            // Warnung wenn Erwachsenen-Regel bei Kindern gewählt
-            if ((method === '1800' || method === '100') && (ageGroup === '1-5' || ageGroup === '6-11')) {
-                const adultISF = parseInt(method) / data.totalInsulin;
-                unit = method === '100' ? 'mmol/l' : 'mg/dl';
-                detailText += ` (Erwachsenen-Formel würde ${adultISF.toFixed(0)} ${unit} ergeben!)`;
-            }
-            
-            document.querySelector('#isfResult .result-value').textContent = isf.toFixed(0) + ' ' + unit;
-            document.querySelector('#isfResult .result-detail').textContent = `1 IE senkt BZ um ${isf.toFixed(0)} ${unit} - ${detailText}`;
-            
-            // Zeitbasierte ISF
-            let timeBasedHtml = '<h4 style="font-size: 16px; margin-bottom: 12px;">Zeitabhängiger ISF</h4>';
-            
-            if (data.ageGroup) {
-                timeBasedHtml += `<div class="info-box" style="margin-bottom: 12px;">
-                    <p style="font-size: 12px;">📊 Automatisch angepasst für <strong>${data.ageGroup} Jahre</strong>. 
-                    Der tatsächliche ISF muss durch vorsichtige Korrekturtests ermittelt werden!</p>
-                </div>`;
-            }
-            
-            timeBasedHtml += '<div style="display: grid; gap: 8px;">';
-            
-            for (const [timeRange, factor] of Object.entries(timeFactors.ISF)) {
-                const adjustedISF = (isf * factor).toFixed(0);
-                timeBasedHtml += `
-                    <div style="display: flex; justify-content: space-between; padding: 8px; background: #1e293b; border-radius: 8px;">
-                        <span>${timeRange} Uhr:</span>
-                        <strong style="color: #60a5fa;">${adjustedISF} ${unit}</strong>
-                    </div>
-                `;
-            }
-            
-            timeBasedHtml += '</div>';
-            document.getElementById('isfByTime').innerHTML = timeBasedHtml;
-            
-            updateFactorsChart();
-        }
-
-        // Faktoren Chart
-        function updateFactorsChart() {
-            if (typeof Chart === 'undefined') {
-                console.warn('Chart.js nicht verfügbar');
-                return;
-            }
-            
-            const data = getFormData();
-            if (!data.totalInsulin || !data.ageGroup) return;
-            
-            const ctx = document.getElementById('factorsChart').getContext('2d');
-            
-            // Immer altersangepasste Berechnung für Chart verwenden
-            let basekeFactor;
-            const ageGroup = data.ageGroup;
-            
-            if (ageGroup === '1-5') {
-                basekeFactor = Math.min(3.0, Math.max(0.5, data.totalInsulin * 0.08));
-            } else if (ageGroup === '6-11') {
-                basekeFactor = Math.min(4.0, Math.max(0.8, data.totalInsulin * 0.10));
-            } else {
-                basekeFactor = Math.min(5.0, Math.max(1.0, data.totalInsulin * 0.15));
-            }
-            
-            const timeRanges = Object.keys(timeFactors.KE);
-            const keData = timeRanges.map(range => (basekeFactor * timeFactors.KE[range]).toFixed(2));
-            
-            if (factorsChart) {
-                factorsChart.destroy();
-            }
-            
-            factorsChart = new Chart(ctx, {
+            mealFactorsChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: timeRanges,
+                    labels: labels,
                     datasets: [{
-                        label: 'KE-Faktor (IE/KE)',
-                        data: keData,
+                        label: 'g KH pro IE',
+                        data: data,
                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
                         borderColor: '#3b82f6',
                         borderWidth: 2
@@ -1552,12 +1633,11 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: true,
-                            labels: { color: '#cbd5e1' }
+                            display: false
                         },
                         title: {
                             display: true,
-                            text: `Zeitabhängige KE-Faktoren für ${ageGroup} Jahre`,
+                            text: 'Essensfaktoren im Tagesverlauf',
                             color: '#cbd5e1',
                             font: { size: 16 }
                         }
@@ -1571,7 +1651,217 @@
                             grid: { color: '#334155' },
                             ticks: { 
                                 color: '#94a3b8',
-                                callback: value => value + ' IE/KE'
+                                callback: value => value + ' g'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Korrekturfaktoren berechnen
+        function updateCorrectionFactors() {
+            const s = getSettings();
+            const totalInsulin = parseFloat(document.getElementById('totalInsulin').value);
+            const formula = document.getElementById('isfFormula').value;
+            
+            if (!s.age || !totalInsulin) {
+                document.getElementById('correctionFactorsList').innerHTML = 
+                    '<p class="result-detail">Bitte Altersgruppe und Gesamtinsulin eingeben</p>';
+                return;
+            }
+            
+            const wakeTime = document.getElementById('wakeTime').value;
+            const bedTime = document.getElementById('bedTime').value;
+            
+            if (!wakeTime || !bedTime) {
+                document.getElementById('correctionFactorsList').innerHTML = 
+                    '<p class="result-detail">Bitte Aufsteh- und Einschlafzeit eingeben</p>';
+                return;
+            }
+            
+            // Basis ISF berechnen basierend auf gewählter Formel
+            let baseISF;
+            let unit = 'mg/dl';
+            
+            if (formula === 'auto') {
+                // Automatische altersangepasste Berechnung
+                if (s.age === '1-5') {
+                    baseISF = 2000 / totalInsulin;
+                } else if (s.age === '6-11') {
+                    baseISF = 1900 / totalInsulin;
+                } else {
+                    baseISF = 1800 / totalInsulin;
+                }
+            } else if (formula === '100' || formula === '83' || formula === '110' || formula === '120') {
+                // mmol/l Formeln
+                baseISF = parseInt(formula) / totalInsulin;
+                unit = 'mmol/l';
+            } else {
+                // Standard mg/dl Formeln
+                baseISF = parseInt(formula) / totalInsulin;
+            }
+            
+            // Zeit-Helper-Funktionen
+            function timeToMinutes(time) {
+                const [h, m] = time.split(':').map(Number);
+                return h * 60 + m;
+            }
+            
+            function minutesToTime(minutes) {
+                while (minutes < 0) minutes += 1440; // 24h = 1440min
+                while (minutes >= 1440) minutes -= 1440;
+                const h = Math.floor(minutes / 60);
+                const m = minutes % 60;
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            }
+            
+            const wakeMinutes = timeToMinutes(wakeTime);
+            const bedMinutes = timeToMinutes(bedTime);
+            
+            // Drei Zeitfenster exakt nach Schema
+            const windows = [
+                {
+                    name: 'Zeitfenster No.1',
+                    description: 'Nacht (0:00 bis ca. Aufstehzeit - 30min)',
+                    start: '00:00',
+                    end: minutesToTime(wakeMinutes - 30),
+                    color: '#1e3a8a'
+                },
+                {
+                    name: 'Zeitfenster No.2',
+                    description: 'Tag (Aufstehzeit - 30min bis Einschlafzeit + 30min)',
+                    start: minutesToTime(wakeMinutes - 30),
+                    end: minutesToTime(bedMinutes + 30),
+                    color: '#065f46'
+                },
+                {
+                    name: 'Zeitfenster No.3',
+                    description: 'Abend/Nacht (Einschlafzeit + 30min bis 24:00)',
+                    start: minutesToTime(bedMinutes + 30),
+                    end: '24:00',
+                    color: '#7c2d12'
+                }
+            ];
+            
+            const sensitivity = insulinSensitivityCurves[s.age];
+            let html = `
+                <div style="background: #334155; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <div style="font-size: 12px; color: #94a3b8;">Formel: ${formula === 'auto' ? 'Automatisch' : formula + 'er-Regel'}</div>
+                    <div style="font-size: 14px; color: #60a5fa; margin-top: 4px;">Basis-ISF: ${baseISF.toFixed(0)} ${unit}</div>
+                </div>
+                <div style="display: grid; gap: 12px;">
+            `;
+            
+            const chartLabels = [];
+            const chartData = [];
+            
+            windows.forEach(window => {
+                // Zeit in Stunden für Empfindlichkeitsberechnung
+                const startMin = timeToMinutes(window.start);
+                const endMin = window.end === '24:00' ? 1440 : timeToMinutes(window.end);
+                
+                // Durchschnittliche Empfindlichkeit im Zeitfenster
+                let avgSensitivity = 0;
+                let count = 0;
+                
+                // Berechne über alle Stunden im Zeitfenster
+                for (let min = startMin; min < endMin; min += 60) {
+                    const hour = Math.floor(min / 60) % 24;
+                    const hourStr = hour.toString().padStart(2, '0');
+                    avgSensitivity += sensitivity[hourStr] || 0.5;
+                    count++;
+                }
+                
+                avgSensitivity = count > 0 ? avgSensitivity / count : 0.5;
+                
+                // ISF anpassen: Je höher die Empfindlichkeit, desto höher der ISF
+                const adjustedISF = baseISF * (1 + (avgSensitivity - 0.4));
+                const roundedISF = unit === 'mmol/l' ? Math.round(adjustedISF * 10) / 10 : Math.round(adjustedISF);
+                
+                chartLabels.push(window.name.replace('Zeitfenster ', ''));
+                chartData.push(roundedISF);
+                
+                html += `
+                    <div style="background: ${window.color}; padding: 16px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                        <div style="display: grid; grid-template-columns: 1fr auto; align-items: start;">
+                            <div>
+                                <strong style="color: #f1f5f9;">${window.name}</strong>
+                                <div style="color: #cbd5e1; font-size: 12px; margin-top: 4px;">
+                                    ${window.start} - ${window.end} Uhr
+                                </div>
+                                <div style="color: #94a3b8; font-size: 11px; margin-top: 2px;">
+                                    ${window.description}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="color: #60a5fa; font-size: 28px; font-weight: bold;">${roundedISF}</span>
+                                <div style="color: #cbd5e1; font-size: 14px;">${unit}</div>
+                                <div style="color: #94a3b8; font-size: 11px; margin-top: 4px;">
+                                    pro 1 IE
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            document.getElementById('correctionFactorsList').innerHTML = html;
+            
+            // Chart aktualisieren
+            updateCorrectionFactorsChart(chartLabels, chartData);
+        }
+
+        function updateCorrectionFactorsChart(labels, data) {
+            if (typeof Chart === 'undefined' || !labels.length) return;
+            
+            const ctx = document.getElementById('correctionFactorsChart').getContext('2d');
+            
+            if (correctionFactorsChart) {
+                correctionFactorsChart.destroy();
+            }
+            
+            correctionFactorsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'ISF (mg/dl pro IE)',
+                        data: data,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 8,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Korrekturfaktoren nach Zeitfenster',
+                            color: '#cbd5e1',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: {
+                            grid: { color: '#334155' },
+                            ticks: { 
+                                color: '#94a3b8',
+                                callback: value => value + ' mg/dl'
                             }
                         }
                     }
@@ -1671,7 +1961,7 @@
             const avgTotalInsulin = recentHistory.reduce((sum, h) => sum + h.data.totalInsulin, 0) / recentHistory.length;
             const avgBasalPercentage = recentHistory.reduce((sum, h) => sum + h.data.basalPercentage, 0) / recentHistory.length;
             
-            // Trend berechnen (Vergleich erste Hälfte mit zweiter Hälfte)
+            // Trend berechnen
             const half = Math.floor(recentHistory.length / 2);
             const firstHalf = recentHistory.slice(0, half);
             const secondHalf = recentHistory.slice(half);
@@ -1805,6 +2095,7 @@
             if (entry) {
                 document.getElementById('totalInsulin').value = entry.data.totalInsulin;
                 document.getElementById('basalPercentage').value = entry.data.basalPercentage;
+                updateBasalDisplay(entry.data.basalPercentage);
                 document.getElementById('temporaryBasal').value = entry.data.temporaryBasal;
                 
                 // Zum Basalraten-Tab wechseln
@@ -1881,45 +2172,6 @@
             y += 10;
             doc.text(`Gesamt berechnet: ${total.toFixed(3)} I.E.`, 20, y);
             
-            // KE-Faktor und ISF - immer altersangepasst berechnen
-            let keFactor;
-            let keMethodText = '';
-            
-            const ageGroup = data.ageGroup;
-            if (ageGroup === '1-5') {
-                keFactor = Math.min(3.0, Math.max(0.5, data.totalInsulin * 0.08));
-                keMethodText = 'Kleinkind-Formel';
-            } else if (ageGroup === '6-11') {
-                keFactor = Math.min(4.0, Math.max(0.8, data.totalInsulin * 0.10));
-                keMethodText = 'Schulkind-Formel';
-            } else {
-                keFactor = Math.min(5.0, Math.max(1.0, data.totalInsulin * 0.15));
-                keMethodText = 'Jugend-Formel';
-            }
-            
-            let isf;
-            let isfMethodText = '';
-            
-            if (ageGroup === '1-5') {
-                isf = 1500 / data.totalInsulin;
-                isfMethodText = '1500er-Regel (Kleinkinder)';
-            } else if (ageGroup === '6-11') {
-                isf = 1650 / data.totalInsulin;
-                isfMethodText = '1650er-Regel (Schulkinder)';
-            } else {
-                isf = 1700 / data.totalInsulin;
-                isfMethodText = '1700er-Regel (Jugendliche)';
-            }
-            
-            y += 20;
-            doc.setFontSize(14);
-            doc.text('Berechnete Faktoren:', 20, y);
-            y += 10;
-            doc.setFontSize(12);
-            doc.text(`KE-Faktor: ${keFactor.toFixed(2)} IE/KE (${keMethodText})`, 20, y);
-            y += 8;
-            doc.text(`ISF: ${isf.toFixed(0)} mg/dl pro IE (${isfMethodText})`, 20, y);
-            
             // Tabelle
             y += 15;
             const tableData = rates.map(({time, original, rate, percent}) => [
@@ -1965,52 +2217,42 @@
             }
         }
 
-        // Warte bis Chart.js geladen ist
-        function initializeCharts() {
-            if (typeof Chart === 'undefined') {
-                console.error('Chart.js nicht geladen. Bitte Seite neu laden.');
-                // Zeige Warnung
-                document.querySelectorAll('.chart-container').forEach(container => {
-                    container.innerHTML = '<div class="empty-state"><p>Charts können nicht angezeigt werden. Bitte Seite neu laden.</p></div>';
-                });
-                return;
-            }
-            
-            // Initial empty charts
-            updateBasalChart([]);
-            updateHistoryView();
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             updateDisplay();
             
-            // Dropdowns und Info-Box initial anpassen
-            updateKEDropdown();
-            updateISFDropdown();
-            updateFactorsInfoBox();
+            // Formel-Dropdowns initialisieren
+            updateKEFormulaOptions();
+            updateISFFormulaOptions();
+            
+            updateMealFactors();
+            updateCorrectionFactors();
             
             // Auto-calculate on input
-            ['totalInsulin', 'basalPercentage', 'temporaryBasal'].forEach(id => {
+            ['totalInsulin', 'temporaryBasal'].forEach(id => {
                 const element = document.getElementById(id);
                 element.addEventListener('input', () => {
                     if (isValid()) {
                         calculate();
                     }
+                    updateMealFactors();
+                    updateCorrectionFactors();
                 });
             });
             
-            // Custom KE input listener
-            const customKE = document.getElementById('customKE');
-            if (customKE) {
-                customKE.addEventListener('input', updateKECalculation);
-            }
+            // Basal-Slider
+            document.getElementById('basalPercentage').addEventListener('input', () => {
+                if (isValid()) {
+                    calculate();
+                }
+            });
             
             // Charts initialisieren wenn Chart.js geladen ist
             if (typeof Chart !== 'undefined') {
-                initializeCharts();
+                updateHistoryView();
             } else {
-                // Warte auf Chart.js
-                window.addEventListener('load', initializeCharts);
+                window.addEventListener('load', () => {
+                    updateHistoryView();
+                });
             }
         });
     </script>
