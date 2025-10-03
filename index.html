@@ -968,10 +968,48 @@
                 background: white;
             }
         }
+        
+        /* Custom Checkbox Styling für Disclaimer */
+        #disclaimerAccept {
+            width: 24px !important;
+            height: 24px !important;
+            min-width: 24px !important;
+            min-height: 24px !important;
+            margin-top: 2px;
+            cursor: pointer;
+            position: relative;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #1e293b;
+            border: 2px solid #3b82f6;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        #disclaimerAccept:hover {
+            border-color: #60a5fa;
+            background: #334155;
+        }
+        
+        #disclaimerAccept:checked {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-color: #3b82f6;
+        }
+        
+        #disclaimerAccept:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" style="pointer-events: none; opacity: 0.3;">
         <div class="header">
             <div class="header-left">
                 <div class="header-icon">💉</div>
@@ -979,6 +1017,7 @@
             </div>
             <div class="button-group">
                 <button class="btn btn-secondary" onclick="openSettings()">⚙️ Einstellungen</button>
+                <button class="btn btn-secondary" onclick="resetDisclaimer()" style="padding: 8px 12px; font-size: 11px; opacity: 0.7;">🔄 Disclaimer</button>
             </div>
         </div>
 
@@ -1277,6 +1316,91 @@
     </div>
 
     <div id="notification" class="notification"></div>
+    
+    <!-- Medizinischer Disclaimer Modal -->
+    <div id="disclaimerModal" class="modal" style="display: block;">
+        <div class="modal-content" style="max-width: 700px; margin-top: 50px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 48px; color: #dc2626; margin-bottom: 10px;">⚠️</div>
+                <h2 style="color: #f1f5f9; font-size: 24px; margin: 0;">Wichtiger medizinischer Hinweis</h2>
+            </div>
+            
+            <div style="background: #7f1d1d; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #dc2626;">
+                <h3 style="color: #fca5a5; font-size: 18px; margin-bottom: 15px;">
+                    ⚠️ ACHTUNG - Nur Berechnungshilfe
+                </h3>
+                <p style="color: #fecaca; line-height: 1.6; font-size: 14px;">
+                    Diese App ist <strong>AUSSCHLIESSLICH ein Rechenhilfsmittel</strong> und ersetzt 
+                    <strong>KEINE</strong> medizinische Beratung, Diagnose oder Behandlung!
+                </p>
+            </div>
+            
+            <div style="background: #1e3a8a; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <h3 style="color: #93c5fd; font-size: 16px; margin-bottom: 12px;">
+                    📋 Wichtige Hinweise zur Nutzung:
+                </h3>
+                <ul style="color: #dbeafe; font-size: 13px; line-height: 1.8; margin-left: 20px;">
+                    <li><strong>Berechnungen basieren auf theoretischen Formeln</strong> und müssen individuell angepasst werden</li>
+                    <li><strong>ALLE Werte müssen mit Ihrem Diabetesteam</strong> (Arzt, Diabetesberater) besprochen und validiert werden</li>
+                    <li><strong>Verwenden Sie NIEMALS</strong> ungeprüfte Berechnungen für Ihre Insulintherapie</li>
+                    <li>Die App berücksichtigt <strong>NICHT</strong> individuelle Faktoren wie Krankheit, Sport, Stress, Hormone etc.</li>
+                    <li>Jeder Mensch reagiert unterschiedlich auf Insulin - <strong>individuelle Anpassung ist zwingend erforderlich</strong></li>
+                    <li>Die Entwickler übernehmen <strong>KEINE Haftung</strong> für die Verwendung der berechneten Werte</li>
+                </ul>
+            </div>
+            
+            <div style="background: #065f46; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <h3 style="color: #6ee7b7; font-size: 16px; margin-bottom: 12px;">
+                    ✅ Richtige Verwendung:
+                </h3>
+                <ol style="color: #a7f3d0; font-size: 13px; line-height: 1.8; margin-left: 20px;">
+                    <li>Nutzen Sie die App als <strong>Ausgangspunkt</strong> für Gespräche mit Ihrem Diabetesteam</li>
+                    <li>Dokumentieren Sie die Berechnungen und <strong>besprechen Sie diese</strong> bei Ihrem nächsten Termin</li>
+                    <li>Lassen Sie alle Werte <strong>medizinisch überprüfen</strong> bevor Sie diese verwenden</li>
+                    <li>Führen Sie <strong>regelmäßige Blutzuckermessungen</strong> durch</li>
+                    <li>Passen Sie Werte nur nach <strong>Rücksprache mit Ihrem Arzt</strong> an</li>
+                </ol>
+            </div>
+            
+            <div style="background: #991b1b; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+                <p style="color: #fef2f2; font-weight: bold; font-size: 14px; margin: 0;">
+                    🚨 Bei medizinischen Notfällen kontaktieren Sie sofort den Notruf 112 oder Ihren Arzt!
+                </p>
+            </div>
+            
+            <div style="margin-top: 25px;">
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 15px; background: #0f172a; border-radius: 8px; transition: all 0.3s ease;" 
+                       onmouseover="this.style.background='#1e293b'" 
+                       onmouseout="this.style.background='#0f172a'">
+                    <input type="checkbox" id="disclaimerAccept" style="cursor: pointer;">
+                    <span style="color: #cbd5e1; font-size: 13px; line-height: 1.5;">
+                        <strong>Ich habe die Hinweise gelesen und verstanden.</strong><br>
+                        Mir ist bewusst, dass diese App nur ein Rechenhilfsmittel ist und ich alle Werte 
+                        mit meinem Diabetesteam besprechen muss, bevor ich sie verwende. 
+                        Die Nutzung erfolgt auf eigene Verantwortung.
+                    </span>
+                </label>
+                <div style="margin-top: 10px; text-align: center;">
+                    <span id="checkboxStatus" style="color: #dc2626; font-size: 14px; font-weight: bold;">
+                        ❌ Bitte bestätigen Sie die Hinweise durch Ankreuzen
+                    </span>
+                </div>
+            </div>
+            
+            <div class="button-group" style="margin-top: 20px; justify-content: center;">
+                <button id="disclaimerButton" class="btn btn-primary" onclick="acceptDisclaimer()" disabled style="min-width: 200px;">
+                    ✅ Verstanden & Akzeptieren
+                </button>
+            </div>
+            
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #334155;">
+                <p style="color: #64748b; font-size: 11px; text-align: center; line-height: 1.4;">
+                    Diese Software wird "wie besehen" ohne jegliche Gewährleistung zur Verfügung gestellt. 
+                    Die Nutzung erfolgt auf eigenes Risiko. Version 2.0 - Keine Medizinprodukt-Zertifizierung.
+                </p>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -2799,7 +2923,140 @@
                 notification.style.display = 'none';
             }, 3000);
         }
-
+        
+        // Disclaimer Funktionen
+        function initializeDisclaimer() {
+            // Beim Start: App ist deaktiviert, Modal ist sichtbar (bereits im HTML gesetzt)
+            
+            try {
+                const accepted = localStorage.getItem('disclaimerAccepted');
+                const acceptedDate = localStorage.getItem('disclaimerAcceptedDate');
+                
+                console.log('Disclaimer Status:', { accepted, acceptedDate });
+                
+                // NUR wenn bereits akzeptiert und noch gültig, dann aktivieren
+                if (accepted === 'true' && acceptedDate) {
+                    const daysSinceAccepted = (Date.now() - parseInt(acceptedDate)) / (1000 * 60 * 60 * 24);
+                    
+                    if (daysSinceAccepted < 30) {
+                        console.log('Disclaimer gültig - aktiviere App');
+                        
+                        // Verstecke Modal
+                        const modal = document.getElementById('disclaimerModal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+                        
+                        // Aktiviere App
+                        const container = document.querySelector('.container');
+                        if (container) {
+                            container.style.pointerEvents = 'auto';
+                            container.style.opacity = '1';
+                        }
+                        
+                        return true;
+                    } else {
+                        console.log('Disclaimer abgelaufen - muss erneuert werden');
+                    }
+                } else {
+                    console.log('Kein gültiger Disclaimer gefunden - zeige Modal');
+                }
+            } catch (e) {
+                console.error('Fehler beim Prüfen des Disclaimers:', e);
+                // Bei Fehler: Disclaimer anzeigen
+            }
+            
+            // Standard: Disclaimer muss angezeigt werden (ist bereits sichtbar)
+            return false;
+        }
+        
+        function acceptDisclaimer() {
+            const checkbox = document.getElementById('disclaimerAccept');
+            
+            if (!checkbox || !checkbox.checked) {
+                showNotification('Bitte bestätigen Sie, dass Sie die Hinweise gelesen haben!', 'error');
+                return;
+            }
+            
+            try {
+                // Speichere Akzeptanz
+                localStorage.setItem('disclaimerAccepted', 'true');
+                localStorage.setItem('disclaimerAcceptedDate', Date.now().toString());
+                
+                // Schließe Modal
+                const modal = document.getElementById('disclaimerModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                
+                // Aktiviere App
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.pointerEvents = 'auto';
+                    container.style.opacity = '1';
+                }
+                
+                showNotification('Hinweise akzeptiert. Bitte besprechen Sie alle Werte mit Ihrem Diabetesteam!');
+            } catch (e) {
+                console.error('Fehler beim Speichern:', e);
+                alert('Lokaler Speicher nicht verfügbar. Die App funktioniert trotzdem, aber Sie müssen den Disclaimer bei jedem Besuch neu akzeptieren.');
+                
+                // Trotzdem fortfahren
+                const modal = document.getElementById('disclaimerModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.pointerEvents = 'auto';
+                    container.style.opacity = '1';
+                }
+            }
+        }
+        
+        function resetDisclaimer() {
+            try {
+                // Lösche gespeicherte Akzeptanz
+                localStorage.removeItem('disclaimerAccepted');
+                localStorage.removeItem('disclaimerAcceptedDate');
+            } catch (e) {
+                console.error('Fehler beim Zurücksetzen:', e);
+            }
+            
+            // Zeige Disclaimer erneut
+            const modal = document.getElementById('disclaimerModal');
+            if (modal) {
+                // Reset Checkbox
+                const checkbox = document.getElementById('disclaimerAccept');
+                if (checkbox) checkbox.checked = false;
+                
+                // Reset Button
+                const button = document.getElementById('disclaimerButton');
+                if (button) {
+                    button.disabled = true;
+                    button.style.background = '#475569';
+                }
+                
+                // Reset Status Text
+                const status = document.getElementById('checkboxStatus');
+                if (status) {
+                    status.innerHTML = '❌ Bitte bestätigen Sie die Hinweise durch Ankreuzen';
+                    status.style.color = '#dc2626';
+                }
+                
+                // Zeige Modal
+                modal.style.display = 'block';
+                
+                // Deaktiviere App
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.pointerEvents = 'none';
+                    container.style.opacity = '0.3';
+                }
+            }
+        }
+        
         // Event Listeners
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
@@ -2808,6 +3065,40 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Disclaimer Checkbox Setup
+            const disclaimerCheckbox = document.getElementById('disclaimerAccept');
+            const disclaimerButton = document.getElementById('disclaimerButton');
+            const checkboxStatus = document.getElementById('checkboxStatus');
+            
+            if (disclaimerCheckbox) {
+                disclaimerCheckbox.addEventListener('change', function() {
+                    disclaimerButton.disabled = !this.checked;
+                    
+                    if (this.checked) {
+                        disclaimerButton.style.background = 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)';
+                        disclaimerButton.style.transform = 'scale(1.05)';
+                        disclaimerButton.style.boxShadow = '0 10px 20px rgba(59, 130, 246, 0.4)';
+                        
+                        if (checkboxStatus) {
+                            checkboxStatus.innerHTML = '✅ Hinweise bestätigt - Sie können fortfahren';
+                            checkboxStatus.style.color = '#10b981';
+                        }
+                    } else {
+                        disclaimerButton.style.background = '#475569';
+                        disclaimerButton.style.transform = 'scale(1)';
+                        disclaimerButton.style.boxShadow = 'none';
+                        
+                        if (checkboxStatus) {
+                            checkboxStatus.innerHTML = '❌ Bitte bestätigen Sie die Hinweise durch Ankreuzen';
+                            checkboxStatus.style.color = '#dc2626';
+                        }
+                    }
+                });
+            }
+            
+            // Initialisiere Disclaimer (prüft ob bereits akzeptiert)
+            initializeDisclaimer();
+            
             updateDisplay();
             
             // Formel-Dropdowns initialisieren
@@ -2820,21 +3111,26 @@
             // Auto-calculate on input
             ['totalInsulin', 'temporaryBasal'].forEach(id => {
                 const element = document.getElementById(id);
-                element.addEventListener('input', () => {
-                    if (isValid()) {
-                        calculate();
-                    }
-                    updateMealFactors();
-                    updateCorrectionFactors();
-                });
+                if (element) {
+                    element.addEventListener('input', () => {
+                        if (isValid()) {
+                            calculate();
+                        }
+                        updateMealFactors();
+                        updateCorrectionFactors();
+                    });
+                }
             });
             
             // Basal-Slider
-            document.getElementById('basalPercentage').addEventListener('input', () => {
-                if (isValid()) {
-                    calculate();
-                }
-            });
+            const basalSlider = document.getElementById('basalPercentage');
+            if (basalSlider) {
+                basalSlider.addEventListener('input', () => {
+                    if (isValid()) {
+                        calculate();
+                    }
+                });
+            }
             
             // Charts initialisieren wenn Chart.js geladen ist
             if (typeof Chart !== 'undefined') {
@@ -2845,8 +3141,16 @@
                 });
             }
             
-            // Backup Reminder prüfen
-            checkBackupReminder();
+            // Backup Reminder prüfen (nur wenn Disclaimer akzeptiert)
+            setTimeout(() => {
+                try {
+                    if (localStorage.getItem('disclaimerAccepted') === 'true') {
+                        checkBackupReminder();
+                    }
+                } catch (e) {
+                    console.log('Backup Reminder übersprungen - localStorage nicht verfügbar');
+                }
+            }, 3000);
         });
     </script>
 </body>
