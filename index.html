@@ -1244,12 +1244,20 @@
                 <h2>📈 Verlauf & Trends</h2>
                 
                 <div class="button-group">
-                    <button class="btn btn-secondary" onclick="exportHistory()">
-                        📥 Exportieren
+                    <button class="btn btn-secondary" onclick="exportAllData()">
+                        💾 Alles Exportieren
                     </button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">
+                        📂 Daten Importieren
+                    </button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importAllData(event)">
                     <button class="btn btn-danger" onclick="clearHistory()">
                         🗑️ Verlauf löschen
                     </button>
+                </div>
+                
+                <div class="info-box" style="margin-top: 16px;">
+                    <p style="font-size: 12px;"><strong>💡 Tipp:</strong> Speichern Sie regelmäßig Ihre Daten mit "Alles Exportieren". Diese Datei enthält alle Einstellungen, Verlauf und Berechnungen. Sie können sie auf jedem Gerät wieder importieren!</p>
                 </div>
 
                 <div id="historyStats" class="calculation-grid" style="margin-top: 20px;">
@@ -2540,6 +2548,147 @@
             
             showNotification('Verlauf exportiert!');
         }
+        
+        // NEUE FUNKTION: Kompletter Datenexport
+        function exportAllData() {
+            const exportData = {
+                version: '2.0',
+                exportDate: new Date().toISOString(),
+                settings: getSettings(),
+                history: getHistory(),
+                currentValues: {
+                    totalInsulin: document.getElementById('totalInsulin').value,
+                    basalPercentage: document.getElementById('basalPercentage').value,
+                    temporaryBasal: document.getElementById('temporaryBasal').value,
+                    // Essensfaktoren
+                    keFormula: document.getElementById('keFormula').value,
+                    breakfast: document.getElementById('breakfast').value,
+                    lunch: document.getElementById('lunch').value,
+                    dinner: document.getElementById('dinner').value,
+                    // Korrekturfaktoren
+                    isfFormula: document.getElementById('isfFormula').value,
+                    wakeTime: document.getElementById('wakeTime').value,
+                    bedTime: document.getElementById('bedTime').value
+                }
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const fileName = `basalraten_backup_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', fileName);
+            linkElement.click();
+            
+            showNotification('✅ Alle Daten exportiert! Sichere Datei für andere Geräte.');
+        }
+        
+        // NEUE FUNKTION: Import aller Daten
+        function importAllData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    
+                    // Validierung
+                    if (!importData.version) {
+                        // Alte Version - nur Verlauf
+                        if (Array.isArray(importData)) {
+                            localStorage.setItem('basalHistory', JSON.stringify(importData));
+                            showNotification('Verlauf importiert (altes Format)');
+                            updateHistoryView();
+                            return;
+                        }
+                        throw new Error('Ungültiges Dateiformat');
+                    }
+                    
+                    // Import Einstellungen
+                    if (importData.settings) {
+                        localStorage.setItem('basalSettings', JSON.stringify(importData.settings));
+                        updateDisplay();
+                        updateKEFormulaOptions();
+                        updateISFFormulaOptions();
+                    }
+                    
+                    // Import Verlauf
+                    if (importData.history) {
+                        localStorage.setItem('basalHistory', JSON.stringify(importData.history));
+                    }
+                    
+                    // Aktuelle Werte wiederherstellen
+                    if (importData.currentValues) {
+                        const cv = importData.currentValues;
+                        if (cv.totalInsulin) document.getElementById('totalInsulin').value = cv.totalInsulin;
+                        if (cv.basalPercentage) {
+                            document.getElementById('basalPercentage').value = cv.basalPercentage;
+                            updateBasalDisplay(cv.basalPercentage);
+                        }
+                        if (cv.temporaryBasal) document.getElementById('temporaryBasal').value = cv.temporaryBasal;
+                        
+                        // Essensfaktoren
+                        if (cv.keFormula) {
+                            setTimeout(() => {
+                                document.getElementById('keFormula').value = cv.keFormula;
+                            }, 100);
+                        }
+                        if (cv.breakfast) document.getElementById('breakfast').value = cv.breakfast;
+                        if (cv.lunch) document.getElementById('lunch').value = cv.lunch;
+                        if (cv.dinner) document.getElementById('dinner').value = cv.dinner;
+                        
+                        // Korrekturfaktoren
+                        if (cv.isfFormula) {
+                            setTimeout(() => {
+                                document.getElementById('isfFormula').value = cv.isfFormula;
+                            }, 100);
+                        }
+                        if (cv.wakeTime) document.getElementById('wakeTime').value = cv.wakeTime;
+                        if (cv.bedTime) document.getElementById('bedTime').value = cv.bedTime;
+                    }
+                    
+                    // UI aktualisieren
+                    updateMealFactors();
+                    updateCorrectionFactors();
+                    updateHistoryView();
+                    
+                    showNotification('✅ Alle Daten erfolgreich importiert!');
+                    
+                    // Wenn Daten vorhanden, berechnen
+                    if (isValid()) {
+                        calculate();
+                    }
+                    
+                } catch (error) {
+                    showNotification('Fehler beim Importieren: ' + error.message, 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+            event.target.value = ''; // Reset file input
+        }
+        
+        // NEUE FUNKTION: Automatisches Backup Reminder
+        function checkBackupReminder() {
+            const lastBackup = localStorage.getItem('lastBackupReminder');
+            const now = new Date().getTime();
+            const oneWeek = 7 * 24 * 60 * 60 * 1000;
+            
+            if (!lastBackup || now - parseInt(lastBackup) > oneWeek) {
+                const history = getHistory();
+                if (history.length > 5) {
+                    setTimeout(() => {
+                        if (confirm('💡 Es wird empfohlen, Ihre Daten zu sichern. Möchten Sie jetzt ein Backup erstellen?')) {
+                            exportAllData();
+                        }
+                        localStorage.setItem('lastBackupReminder', now.toString());
+                    }, 2000);
+                }
+            }
+        }
 
         function clearHistory() {
             if (!confirm('Wirklich den gesamten Verlauf löschen?')) return;
@@ -2669,6 +2818,9 @@
                     updateHistoryView();
                 });
             }
+            
+            // Backup Reminder prüfen
+            checkBackupReminder();
         });
     </script>
 </body>
