@@ -291,27 +291,6 @@
             }
         }
         
-        /* Spezielle Anpassung für Zeit-Inputs */
-        input[type="time"] {
-            padding: 10px 8px;
-            font-size: 14px;
-            min-width: 0;
-        }
-        
-        @media (min-width: 480px) {
-            input[type="time"] {
-                padding: 10px 12px;
-                font-size: 15px;
-            }
-        }
-        
-        @media (min-width: 768px) {
-            input[type="time"] {
-                padding: 12px 16px;
-                font-size: 16px;
-            }
-        }
-        
         select {
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
@@ -989,29 +968,6 @@
                 background: white;
             }
         }
-        
-        /* iOS Safari Specific Fixes */
-        @supports (-webkit-touch-callout: none) {
-            input[type="time"] {
-                -webkit-appearance: none;
-                padding: 12px 8px;
-            }
-        }
-        
-        /* Android Chrome Specific */
-        @media screen and (-webkit-min-device-pixel-ratio: 0) {
-            input[type="time"]::-webkit-calendar-picker-indicator {
-                background: transparent;
-                cursor: pointer;
-                position: absolute;
-                right: 0;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                width: auto;
-                height: auto;
-            }
-        }
     </style>
 </head>
 <body>
@@ -1143,18 +1099,18 @@
                     <div class="time-input-group">
                         <div class="time-field-container">
                             <label for="breakfast">Frühstück</label>
-                            <input type="time" id="breakfast" value="07:00" onchange="updateMealFactors()">
+                            <input type="text" id="breakfast" value="07:00" placeholder="z.B. 7 oder 7:30" onblur="formatTimeInput(this); updateMealFactors()" onkeypress="handleTimeKeypress(event, this)">
                         </div>
                         <div class="time-field-container">
                             <label for="lunch">Mittagessen</label>
-                            <input type="time" id="lunch" value="12:00" onchange="updateMealFactors()">
+                            <input type="text" id="lunch" value="12:00" placeholder="z.B. 12 oder 12:30" onblur="formatTimeInput(this); updateMealFactors()" onkeypress="handleTimeKeypress(event, this)">
                         </div>
                     </div>
                     
                     <div class="time-input-group">
                         <div class="time-field-container">
                             <label for="dinner">Abendessen</label>
-                            <input type="time" id="dinner" value="18:00" onchange="updateMealFactors()">
+                            <input type="text" id="dinner" value="18:00" placeholder="z.B. 18 oder 18:30" onblur="formatTimeInput(this); updateMealFactors()" onkeypress="handleTimeKeypress(event, this)">
                         </div>
                         <div class="time-field-container disabled">
                             <label>Jausen</label>
@@ -1209,11 +1165,11 @@
                     <div class="time-input-group">
                         <div class="time-field-container">
                             <label for="wakeTime">Aufstehzeit</label>
-                            <input type="time" id="wakeTime" value="06:00" onchange="updateCorrectionFactors()">
+                            <input type="text" id="wakeTime" value="06:00" placeholder="z.B. 6 oder 6:30" onblur="formatTimeInput(this); updateCorrectionFactors()" onkeypress="handleTimeKeypress(event, this)">
                         </div>
                         <div class="time-field-container">
                             <label for="bedTime">Einschlafzeit</label>
-                            <input type="time" id="bedTime" value="21:00" onchange="updateCorrectionFactors()">
+                            <input type="text" id="bedTime" value="21:00" placeholder="z.B. 21 oder 21:30" onblur="formatTimeInput(this); updateCorrectionFactors()" onkeypress="handleTimeKeypress(event, this)">
                         </div>
                     </div>
                 </div>
@@ -1440,7 +1396,77 @@
             document.getElementById('basalValue').textContent = value + '%';
             document.getElementById('bolusValue').textContent = (100 - value) + '%';
         }
-
+        
+        // Zeit-Formatierung Funktionen
+        function formatTimeInput(input) {
+            let value = input.value.trim();
+            
+            // Wenn leer, nichts tun
+            if (!value) return;
+            
+            // Entferne alle nicht-numerischen Zeichen außer :
+            value = value.replace(/[^\d:]/g, '');
+            
+            // Verschiedene Eingabeformate verarbeiten
+            if (value.includes(':')) {
+                // Format mit : bereits vorhanden
+                const parts = value.split(':');
+                let hours = parseInt(parts[0]) || 0;
+                let minutes = parseInt(parts[1]) || 0;
+                
+                // Validierung
+                hours = Math.min(23, Math.max(0, hours));
+                minutes = Math.min(59, Math.max(0, minutes));
+                
+                input.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            } else {
+                // Nur Zahlen eingegeben
+                let num = parseInt(value) || 0;
+                
+                if (value.length <= 2) {
+                    // Annahme: nur Stunden (z.B. "6" → "06:00", "14" → "14:00")
+                    num = Math.min(23, Math.max(0, num));
+                    input.value = `${num.toString().padStart(2, '0')}:00`;
+                } else if (value.length === 3) {
+                    // Annahme: erste Ziffer ist Stunde, rest Minuten (z.B. "730" → "07:30")
+                    let hours = Math.floor(num / 100);
+                    let minutes = num % 100;
+                    hours = Math.min(23, Math.max(0, hours));
+                    minutes = Math.min(59, Math.max(0, minutes));
+                    input.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                } else if (value.length === 4) {
+                    // Annahme: HHMM Format (z.B. "0730" → "07:30", "1430" → "14:30")
+                    let hours = Math.floor(num / 100);
+                    let minutes = num % 100;
+                    hours = Math.min(23, Math.max(0, hours));
+                    minutes = Math.min(59, Math.max(0, minutes));
+                    input.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                } else {
+                    // Zu viele Ziffern, nimm nur die ersten 4
+                    num = parseInt(value.substring(0, 4));
+                    let hours = Math.floor(num / 100);
+                    let minutes = num % 100;
+                    hours = Math.min(23, Math.max(0, hours));
+                    minutes = Math.min(59, Math.max(0, minutes));
+                    input.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+        
+        function handleTimeKeypress(event, input) {
+            if (event.key === 'Enter') {
+                formatTimeInput(input);
+                input.blur();
+                
+                // Trigger update functions
+                if (input.id === 'breakfast' || input.id === 'lunch' || input.id === 'dinner') {
+                    updateMealFactors();
+                } else if (input.id === 'wakeTime' || input.id === 'bedTime') {
+                    updateCorrectionFactors();
+                }
+            }
+        }
+        
         // Tab-Wechsel
         function switchTab(tabName) {
             // Tabs deaktivieren
